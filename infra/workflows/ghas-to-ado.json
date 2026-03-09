@@ -354,7 +354,7 @@
                         {
                           "op": "add",
                           "path": "/fields/System.State",
-                          "value": "Closed"
+                          "value": "Done"
                         },
                         {
                           "op": "add",
