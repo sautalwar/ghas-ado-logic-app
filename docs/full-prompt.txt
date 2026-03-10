@@ -1,0 +1,178 @@
+================================================================================
+GHAS → Azure DevOps Logic App Automation — Full Prompt
+================================================================================
+
+This file captures the complete set of requests that were used to build this
+project from scratch in a single Copilot CLI session.
+
+--------------------------------------------------------------------------------
+PROMPT 1: Initial Requirements
+--------------------------------------------------------------------------------
+
+Can we use a Logic App (or similar automation) to:
+
+- Automatically create an ADO work item when a new GHAS vulnerability is detected
+  From inside the GHAS vulnerability context
+  Without a human needing to:
+    - Go to Boards
+    - Manually create a work item
+    - Come back and link it to the vulnerability
+
+- The work item should auto-populate:
+    - Vulnerability title
+    - Description
+    - Severity
+    - Repo / branch
+    - File and line (if available)
+    - Any GHAS metadata available via API
+
+- Automatically link the created work item back to the GHAS vulnerability
+    - So developers have full traceability
+    - So security doesn't lose context
+
+- (Nice-to-have, but explicitly discussed) Auto-close the work item when the
+  vulnerability is resolved
+    - If GHAS marks the vulnerability as fixed
+    - The linked ADO work item should be automatically closed or transitioned
+    - Customer said this is not a deal breaker, but would be "huge value"
+
+Can you tell me how you will do this task?
+
+--------------------------------------------------------------------------------
+PROMPT 2: ADO Instance Details
+--------------------------------------------------------------------------------
+
+https://dev.azure.com/brandsafway1/brandsafway_Engg — here is the ADO instance
+which I will be using. Can you populate data so I can work with this?
+
+--------------------------------------------------------------------------------
+PROMPT 3: Seed Demo Data
+--------------------------------------------------------------------------------
+
+Can you put some sample repos, boards, Sprints, backlogs, pipelines, test plans
+in ADO for Learfield demo?
+
+--------------------------------------------------------------------------------
+PROMPT 4: ADO PAT
+--------------------------------------------------------------------------------
+
+Here is the token ADO_PAT:
+<ADO_PAT_TOKEN>
+
+--------------------------------------------------------------------------------
+PROMPT 5: Step-by-Step Guide with Screenshots
+--------------------------------------------------------------------------------
+
+I can give you the URL for ADO https://dev.azure.com/brandsafway1/ and access to
+my Azure portal. Can you create a step by step guide with screenshots on how will
+create the logic app so I can demo that to my customer?
+
+--------------------------------------------------------------------------------
+PROMPT 6: Playwright Screenshots
+--------------------------------------------------------------------------------
+
+I need screenshots as well. Can you use Playwright and give me the screenshots?
+
+--------------------------------------------------------------------------------
+PROMPT 7: Full Logic App Build with Screenshots
+--------------------------------------------------------------------------------
+
+I wanted to create the entire logic app so it triggers when there is a
+vulnerability and creates a work item and as soon as the vulnerability is no
+longer present it closes the work item. Capture all screenshots for these.
+
+--------------------------------------------------------------------------------
+PROMPT 8: Push to GitHub
+--------------------------------------------------------------------------------
+
+Can you push this code on GitHub https://github.com/sautalwar?tab=repositories
+
+--------------------------------------------------------------------------------
+PROMPT 9: End-to-End Testing with ADO
+--------------------------------------------------------------------------------
+
+Can we test the logic app end to end with ADO instance? I want to take
+screenshots of the ADO instance as well. Can you also populate the ADO instance
+with the seed data?
+
+--------------------------------------------------------------------------------
+PROMPT 10: PowerPoint Presentation
+--------------------------------------------------------------------------------
+
+Based on all the screenshots and after the end to end demo I want you to create
+a PowerPoint presentation for me with the slides.
+
+================================================================================
+SUMMARY OF WHAT WAS BUILT
+================================================================================
+
+From these 10 prompts, the following was delivered in a single session:
+
+1. PLANNING & ARCHITECTURE
+   - Clarified requirements (alert types, platform, IaC, work item type)
+   - Created implementation plan with 7 tracked tasks
+
+2. INFRASTRUCTURE AS CODE
+   - infra/main.bicep — top-level Bicep orchestrator
+   - infra/modules/logic-app.bicep — Logic App resource definition
+   - infra/workflows/ghas-to-ado.json — 15-action workflow (382 lines)
+   - infra/parameters.json — parameterized config
+
+3. SCRIPTS
+   - scripts/deploy.ps1 — PowerShell deployment script
+   - scripts/setup-webhooks.ps1 — GitHub webhook configuration
+   - scripts/seed-demo-data.ps1 — Learfield-themed ADO data seeder
+   - scripts/create-pptx.py — PowerPoint generation script
+
+4. DOCUMENTATION
+   - README.md — project overview with architecture diagram
+   - docs/setup-guide.md — detailed setup & production hardening
+   - docs/demo-walkthrough.md — 20-minute demo script with 13 screenshots
+
+5. AZURE DEPLOYMENT
+   - Resource Group: rg-ghas-ado-learfield (East US)
+   - Logic App: ghas-ado-sync-nd4zwkrsgpemi (Consumption tier)
+   - 1 trigger, 22 actions, fully operational
+
+6. SCREENSHOTS (13 total)
+   - 12 Azure Portal screenshots (portal, designer, code view)
+   - 1 ADO work items list screenshot
+
+7. ADO DEMO DATA (14 work items)
+   - 1 Epic, 3 Features, 4 User Stories, 4 Tasks, 2 Bugs
+   - All Learfield Fan Engagement Platform themed
+
+8. END-TO-END TESTING (all passing)
+   - Code Scanning alert → WI #9 created
+   - Dependabot alert → WI #10 created
+   - Secret Scanning alert → WI #11 created
+   - "Fixed" webhook → WI #9 auto-closed to "Done"
+   - Deduplication verified
+
+9. POWERPOINT PRESENTATION
+   - docs/GHAS-ADO-Logic-App-Demo.pptx — 17 slides, 1.7 MB
+   - Dark theme, embedded screenshots, customer-ready
+
+10. GITHUB REPO
+    - https://github.com/sautalwar/ghas-ado-logic-app
+    - 25+ files committed and pushed
+
+================================================================================
+HOW TO REPRODUCE
+================================================================================
+
+To rebuild this entire solution from scratch, paste the prompts above (1-10)
+sequentially into a Copilot CLI session with:
+  - Access to an Azure subscription (for Logic App deployment)
+  - An ADO organization and project with a PAT
+  - A GitHub account (for pushing code)
+  - Playwright available (for screenshots)
+
+The session will:
+  1. Create all IaC, scripts, and documentation
+  2. Deploy the Logic App to Azure
+  3. Seed ADO with demo data
+  4. Capture Azure Portal and ADO screenshots
+  5. Test end-to-end (create + auto-close)
+  6. Generate a PowerPoint presentation
+  7. Push everything to GitHub
