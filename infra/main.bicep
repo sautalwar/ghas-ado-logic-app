@@ -37,6 +37,32 @@ module logicApp 'modules/logic-app.bicep' = {
   }
 }
 
+module secretScanLogicApp 'modules/secret-scan-logic-app.bicep' = {
+  name: 'secret-scan-ado-logic-app'
+  params: {
+    location: location
+    adoOrganization: adoOrganization
+    adoProject: adoProject
+    adoPat: adoPat
+  }
+}
+
 output logicAppCallbackUrl string = logicApp.outputs.triggerUrl
 output logicAppName string = logicApp.outputs.logicAppName
 output logicAppResourceId string = logicApp.outputs.logicAppResourceId
+module autocloseLogicApp 'modules/autoclose-logic-app.bicep' = {
+  name: 'ghazdo-autoclose-logic-app'
+  params: {
+    location: location
+    adoOrganization: adoOrganization
+    adoProject: adoProject
+    adoPat: adoPat
+  }
+}
+
+output secretScanCallbackUrl string = secretScanLogicApp.outputs.triggerUrl
+output secretScanLogicAppName string = secretScanLogicApp.outputs.logicAppName
+output secretScanLogicAppResourceId string = secretScanLogicApp.outputs.logicAppResourceId
+output autocloseCallbackUrl string = autocloseLogicApp.outputs.triggerUrl
+output autocloseLogicAppName string = autocloseLogicApp.outputs.logicAppName
+output autocloseLogicAppResourceId string = autocloseLogicApp.outputs.logicAppResourceId

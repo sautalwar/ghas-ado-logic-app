@@ -1,0 +1,109 @@
+{
+  "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "adoOrganization": { "type": "String" },
+    "adoProject": { "type": "String" },
+    "adoPat": { "type": "SecureString" }
+  },
+  "triggers": {
+    "When_a_GHAzDO_alert_is_received": {
+      "type": "Request",
+      "kind": "Http",
+      "inputs": { "schema": {} }
+    }
+  },
+  "actions": {
+    "Compose_EventType": {
+      "type": "Compose",
+      "inputs": "@triggerBody()?['eventType']",
+      "runAfter": {}
+    },
+    "Compose_AlertId": {
+      "type": "Compose",
+      "inputs": "@coalesce(triggerBody()?['resource']?['alertId'], triggerBody()?['resource']?['id'], 0)",
+      "runAfter": {}
+    },
+    "Compose_RepoName": {
+      "type": "Compose",
+      "inputs": "@coalesce(triggerBody()?['resource']?['repository']?['name'], 'unknown-repo')",
+      "runAfter": {}
+    },
+    "Compose_GhasTag": {
+      "type": "Compose",
+      "inputs": "@concat('GHAzDO-', outputs('Compose_RepoName'), '-', string(outputs('Compose_AlertId')))",
+      "runAfter": {
+        "Compose_AlertId": ["Succeeded"],
+        "Compose_RepoName": ["Succeeded"]
+      }
+    },
+    "Compose_IsCloseEvent": {
+      "type": "Compose",
+      "inputs": "@or(contains(string(outputs('Compose_EventType')), 'fixed'), contains(string(outputs('Compose_EventType')), 'resolved'), contains(string(outputs('Compose_EventType')), 'closed'), not(contains(string(outputs('Compose_EventType')), 'created')))",
+      "runAfter": {
+        "Compose_EventType": ["Succeeded"]
+      }
+    },
+    "Condition_IsCloseAction": {
+      "type": "If",
+      "expression": {
+        "and": [
+          { "equals": [ "@outputs('Compose_IsCloseEvent')", true ] }
+        ]
+      },
+      "runAfter": {
+        "Compose_IsCloseEvent": ["Succeeded"],
+        "Compose_GhasTag": ["Succeeded"]
+      },
+      "actions": {
+        "HTTP_FindWorkItemToClose": {
+          "type": "Http",
+          "inputs": {
+            "uri": "https://dev.azure.com/@{parameters('adoOrganization')}/@{encodeURIComponent(parameters('adoProject'))}/_apis/wit/wiql?api-version=7.1",
+            "method": "POST",
+            "headers": {
+              "Content-Type": "application/json",
+              "Authorization": "Basic @{base64(concat(':', parameters('adoPat')))}"
+            },
+            "body": {
+              "query": "SELECT [System.Id] FROM WorkItems WHERE [System.Tags] CONTAINS '@{outputs('Compose_GhasTag')}' AND [System.State] <> 'Done' AND [System.State] <> 'Removed'"
+            }
+          },
+          "runAfter": {}
+        },
+        "Condition_FoundWorkItemToClose": {
+          "type": "If",
+          "expression": {
+            "and": [
+              { "greater": [ "@length(body('HTTP_FindWorkItemToClose')?['workItems'])", 0 ] }
+            ]
+          },
+          "runAfter": {
+            "HTTP_FindWorkItemToClose": ["Succeeded"]
+          },
+          "actions": {
+            "HTTP_CloseWorkItem": {
+              "type": "Http",
+              "inputs": {
+                "uri": "https://dev.azure.com/@{parameters('adoOrganization')}/@{encodeURIComponent(parameters('adoProject'))}/_apis/wit/workitems/@{body('HTTP_FindWorkItemToClose')?['workItems'][0]?['id']}?api-version=7.1",
+                "method": "PATCH",
+                "headers": {
+                  "Content-Type": "application/json-patch+json",
+                  "Authorization": "Basic @{base64(concat(':', parameters('adoPat')))}"
+                },
+                "body": [
+                  { "op": "add", "path": "/fields/System.State", "value": "Done" },
+                  { "op": "add", "path": "/fields/System.History", "value": "Auto-closed: GHAzDO alert resolved/fixed." }
+                ]
+              },
+              "runAfter": {}
+            }
+          },
+          "else": { "actions": {} }
+        }
+      },
+      "else": { "actions": {} }
+    }
+  },
+  "outputs": {}
+}
