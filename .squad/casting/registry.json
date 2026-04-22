@@ -41,6 +41,21 @@
       "created_at": "2026-04-21T17:07:00Z",
       "legacy_named": false,
       "status": "active"
+    },
+    "teams-m365": {
+      "persistent_name": "Brett",
+      "universe": "Alien",
+      "created_at": "2026-04-22T00:43:00Z",
+      "legacy_named": false,
+      "status": "active"
+    },
+    "no-code-automation": {
+      "persistent_name": "Call",
+      "universe": "Alien",
+      "created_at": "2026-04-22T00:43:00Z",
+      "legacy_named": false,
+      "status": "active",
+      "notes": "Diegetic Expansion - Alien: Covenant character"
     }
   }
 }

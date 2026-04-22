@@ -18,6 +18,8 @@
 | Lambert | Technical Communicator | .squad/agents/lambert/charter.md | 📝 DevRel |
 | Ash | Power Automate Expert | .squad/agents/ash/charter.md | ⚙️ DevOps |
 | Parker | Automation Architect | .squad/agents/parker/charter.md | 🔧 Backend |
+| Brett | Teams/M365 Integration Expert | .squad/agents/brett/charter.md | 💬 Teams |
+| Call | No-Code Automation Expert | .squad/agents/call/charter.md | 🔗 No-Code |
 | Scribe | Session Logger | .squad/agents/scribe/charter.md | 📋 Scribe |
 | Ralph | Work Monitor | — | 🔄 Monitor |
 

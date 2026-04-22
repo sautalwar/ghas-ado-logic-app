@@ -94,3 +94,26 @@
 
 **Document:** `.squad/decisions/inbox/dallas-automation-approach.md`
 
+### Approach #1 Implementation — Native ADO Button + Work Item Templates (2026)
+
+**Implemented full deliverable set** for Approach #1 (Phase 1 of phased strategy):
+
+**Files created in `approaches/01-native-ado-button/`:**
+- `README.md` — Complete step-by-step guide with exact ADO navigation paths for template creation, area path setup, using the Add button, board automation rules, custom process rules, and dashboard queries
+- `implementation/work-item-template.json` — Exportable template definition with tags (GHAzDO; security; triage), area path, priority 2, severity 2-High, and structured HTML description with remediation steps and acceptance criteria
+- `implementation/board-automation-rules.md` — Auto-assign on Active, auto-close on Done, auto-reopen, swimlane configuration, recommended board columns with WIP limits
+- `implementation/custom-process-rules.md` — 5 process rules (auto-prioritize, auto-assign security lead, require closure justification, route to Security area, prevent closing without verification) plus optional custom fields (Alert Type picklist, Alert URL, Security Verified checkbox)
+- `implementation/dashboard-query.wiql` — 4 WIQL queries: open items, priority breakdown, recently closed (30d), aging items (>7d)
+- `validation/test-plan.md` — 5 tests covering all 3 alert types, template pre-fill verification, and board rule triggers
+- `validation/expected-results.md` — Success metrics (template adoption, triage SLA, resolution time, coverage, stale items)
+- `validation/limitations.md` — Full capabilities assessment with 7 documented limitations and upgrade signals
+- `Native_ADO_Button_Implementation.pdf` — 15-section professional PDF comprehensive enough for standalone implementation
+
+**Key design decisions:**
+- Used Bug type (not Task) for security findings — aligns with severity/priority fields and standard security triage workflows
+- Template includes acceptance criteria checklist for consistent closure verification
+- Priority mapping: Critical→1, High→2 (default), Medium→3, Low→4
+- Recommended inherited process for full rule enforcement but documented board-only path as simpler alternative
+
+**Fleet Implementation:** Orchestrated 2026-04-22 with teams Dallas (Approach #1), Brett (Approaches #2-3), and Call (Approaches #4-5) to deliver complete phased automation strategy. Approach #1 confirms Phase 1 viability as zero-cost, ~10-minute entry point.
+

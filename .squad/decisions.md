@@ -224,7 +224,112 @@ Revised phased approach (see Decision #3) now includes Phase 1.5 as standard rec
 
 ---
 
+### 7. Approach #1 Implementation Complete (2026-04-22)
+**Status:** IMPLEMENTED  
+**Owner:** Dallas (Azure DevOps Expert)  
+**Date:** 2026-04-22  
+**Summary:** Implemented complete Phase 1 (Native ADO Button + Work Item Templates) with 8 files + PDF. Confirms Phase 1 is genuinely ~10 minutes to set up, free, with clear upgrade signals to Phase 1.5 and Phase 3.
+
+**Key Deliverables:**
+- README.md — Step-by-step ADO setup guide
+- work-item-template.json — Exportable template definition
+- board-automation-rules.md — Auto-assign, auto-close, swimlane config
+- custom-process-rules.md — 5 process rules + custom fields
+- dashboard-query.wiql — 4 WIQL queries for tracking
+- Test plan, expected results, limitations documentation
+- Native_ADO_Button_Implementation.pdf (15 sections)
+
+**Key Decision:** ADO Bug type (not Task) chosen for security findings — aligns with Severity/Priority fields and standard security triage workflows.
+
+**Impact:** Phase 1 confirmed as viable zero-cost entry point with documented limitations that guide upgrade decisions.
+
+---
+
+### 8. Approach #2 Implementation Complete (2026-04-22)
+**Status:** IMPLEMENTED  
+**Owner:** Brett (Teams/M365 Integration Expert)  
+**Date:** 2026-04-22  
+**Summary:** Completed Phase 1.5 (Azure Boards App for Teams + Service Hook Notifications) with 9 files + PDF. Delivers ~80% of Logic App value at 0% cost, zero infrastructure.
+
+**Key Deliverables:**
+- README.md — Phase 1.5 setup guide
+- service-hook-config.json — ADO service hook configuration
+- adaptive-card-template.json — Optional enhanced formatting
+- boards-app-setup.md — Step-by-step Boards App walkthrough
+- Teams_Boards_App_Implementation.pdf (17 pages)
+
+**Key Findings:**
+- Two service hooks recommended (alert.created + alert.stateChanged)
+- Azure Boards App "Create Work Item" works on ANY Teams message
+- Setup: ~15 minutes, zero ongoing maintenance
+
+**Recommendation:** Deploy Phase 1.5 immediately after Phase 1 for massive visibility improvement with zero additional cost or infrastructure.
+
+---
+
+### 9. Approach #3 Implementation Complete (2026-04-22)
+**Status:** EVALUATED — VIABLE WITH CAVEATS  
+**Owner:** Brett (Teams/M365 Integration Expert)  
+**Date:** 2026-04-22  
+**Summary:** Completed Phase 2b (Teams Workflows) with 9 files + PDF. Confirmed Teams Workflows can create ADO work items for free; deduplication requires Premium.
+
+**Key Findings:**
+- ADO "Create a work item" connector: Standard (free with M365)
+- WIQL dedup queries: Requires Premium HTTP connector ($15/user/mo)
+- OAuth sign-in (more secure than PATs)
+- Tag convention `GHAzDO-{repo}-{alertId}` enables manual dedup
+- Rate limits (6,000 API calls/day) sufficient for typical volumes
+
+**Architecture:** Teams Workflow trigger → JSON parse → ADO connector → create/update work items
+
+**Recommendation:** Strong Phase 2b option for teams wanting zero infrastructure + free work item creation. Hybrid approach (Teams Workflow for creation + Logic App for auto-close) if full automation needed.
+
+---
+
+### 10. Approach #4 Implementation Complete (2026-04-22)
+**Status:** CONFIRMED  
+**Owner:** Call (No-Code Automation Expert)  
+**Date:** 2026-04-22  
+**Summary:** Completed Phase 2a (Make.com) with 10 files + PDF. Confirmed Make.com ADO module lacks native WIQL; HTTP workaround enables full dedup + auto-close at zero cost.
+
+**Key Findings:**
+- Make.com free tier: 1,000 ops/month
+- Full lifecycle: 7-8 operations per alert
+- Capacity: ~125-142 full alert cycles/month (sufficient for most teams)
+- HTTP module enables WIQL queries (1 extra op per event)
+- PAT must be base64-encoded for HTTP Authorization header
+
+**Architecture:** Webhook → JSON parse → Router → (WIQL dedup + Create) / (WIQL find + Close)
+
+**Recommendation:** Strong Phase 2a option; zero-cost full automation for typical alert volumes.
+
+---
+
+### 11. Approach #5 Implementation Complete (2026-04-22)
+**Status:** CONFIRMED  
+**Owner:** Call (No-Code Automation Expert)  
+**Date:** 2026-04-22  
+**Summary:** Completed Phase 2c (Zapier) with 10 files + PDF. Critical finding: ADO native Zapier consumer does NOT support GHAzDO events; Web Hooks workaround required.
+
+**Key Findings:**
+- ADO native Zapier consumer: Only standard events (not GHAzDO Advanced Security)
+- Workaround: Web Hooks consumer → Zapier Catch Hook (functionally identical)
+- Zapier free tier: Cannot handle webhooks or multi-step Zaps
+- Starter tier minimum: $20/month
+- Full lifecycle: ~9-10 tasks per alert
+- Two Zaps needed: Create + Close (5-6 steps each)
+
+**Architecture:** ADO Service Hook (Web Hooks) → Zapier Catch Hook → Code by Zapier → WIQL dedup → Create/Close work items
+
+**Recommendation:** Solid Phase 2c option; Make.com free tier offers similar automation at zero cost (stronger choice unless team already uses Zapier).
+
+---
+
 ## Governance
+
+- All meaningful changes require team consensus
+- Document architectural decisions here
+- Keep history focused on work, decisions focused on direction
 
 - All meaningful changes require team consensus
 - Document architectural decisions here

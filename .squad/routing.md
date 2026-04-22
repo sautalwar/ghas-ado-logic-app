@@ -11,6 +11,8 @@ How to decide who handles what.
 | Logic Apps, workflows, ARM/JSON | Kane | Workflow design, template authoring, connector config |
 | Power Automate, flows, connectors | Ash | Power Automate design, flow building, connector evaluation |
 | Automation tools, approach comparison | Parker | Tool evaluation, comparison matrices, simplest-path recommendations |
+| Teams, M365, Boards App, Teams Workflows | Brett | Teams integrations, service hook → Teams, adaptive cards |
+| No-code platforms, Make.com, Zapier, IFTTT | Call | SaaS automation, webhook integrations, scenario design |
 | Documentation, explanations, demos | Lambert | README, walkthroughs, simplify concepts, demo guides |
 | Code review | Ripley | Review PRs, check quality, suggest improvements |
 | Scope & priorities | Ripley | What to build next, trade-offs, decisions |
