@@ -9,6 +9,8 @@ How to decide who handles what.
 | Repo analysis, asset inventory | Ripley | What's in this repo, architecture overview, file audit |
 | Azure DevOps, GHAzDO, service hooks | Dallas | ADO config, security scanning, service hook setup |
 | Logic Apps, workflows, ARM/JSON | Kane | Workflow design, template authoring, connector config |
+| Power Automate, flows, connectors | Ash | Power Automate design, flow building, connector evaluation |
+| Automation tools, approach comparison | Parker | Tool evaluation, comparison matrices, simplest-path recommendations |
 | Documentation, explanations, demos | Lambert | README, walkthroughs, simplify concepts, demo guides |
 | Code review | Ripley | Review PRs, check quality, suggest improvements |
 | Scope & priorities | Ripley | What to build next, trade-offs, decisions |

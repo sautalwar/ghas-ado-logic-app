@@ -27,6 +27,20 @@
       "created_at": "2026-04-14T15:20:00Z",
       "legacy_named": false,
       "status": "active"
+    },
+    "power-automate": {
+      "persistent_name": "Ash",
+      "universe": "Alien",
+      "created_at": "2026-04-21T17:07:00Z",
+      "legacy_named": false,
+      "status": "active"
+    },
+    "automation-architect": {
+      "persistent_name": "Parker",
+      "universe": "Alien",
+      "created_at": "2026-04-21T17:07:00Z",
+      "legacy_named": false,
+      "status": "active"
     }
   }
 }

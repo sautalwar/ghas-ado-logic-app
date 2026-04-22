@@ -16,6 +16,8 @@
 | Dallas | Azure DevOps Expert | .squad/agents/dallas/charter.md | ⚙️ DevOps |
 | Kane | Logic Apps Expert | .squad/agents/kane/charter.md | 🔧 Backend |
 | Lambert | Technical Communicator | .squad/agents/lambert/charter.md | 📝 DevRel |
+| Ash | Power Automate Expert | .squad/agents/ash/charter.md | ⚙️ DevOps |
+| Parker | Automation Architect | .squad/agents/parker/charter.md | 🔧 Backend |
 | Scribe | Session Logger | .squad/agents/scribe/charter.md | 📋 Scribe |
 | Ralph | Work Monitor | — | 🔄 Monitor |
 
