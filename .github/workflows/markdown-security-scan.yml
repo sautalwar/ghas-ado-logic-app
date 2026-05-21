@@ -1,0 +1,48 @@
+name: Markdown security scan
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - "**/*.md"
+      - ".github/agents/**"
+      - ".github/skills/**"
+      - ".squad/**/*.md"
+      - "scripts/scan-markdown-security.py"
+      - ".github/workflows/markdown-security-scan.yml"
+  pull_request:
+    branches: [main, master]
+    paths:
+      - "**/*.md"
+      - ".github/agents/**"
+      - ".github/skills/**"
+      - ".squad/**/*.md"
+      - "scripts/scan-markdown-security.py"
+      - ".github/workflows/markdown-security-scan.yml"
+  workflow_dispatch:
+
+jobs:
+  markdown-security-review:
+    name: Scan markdown and instruction files
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Run markdown security scanner
+        run: python scripts/scan-markdown-security.py --root . --output markdown-security-results.sarif
+
+      - name: Upload SARIF results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: markdown-security-results.sarif
+          category: markdown-security-review

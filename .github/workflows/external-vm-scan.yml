@@ -1,0 +1,87 @@
+name: External VM scanning pattern
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - Dockerfile
+      - container-demo/**
+      - scripts/external-scan.sh
+      - .github/workflows/external-vm-scan.yml
+  pull_request:
+    branches: [main, master]
+    paths:
+      - Dockerfile
+      - container-demo/**
+      - scripts/external-scan.sh
+      - .github/workflows/external-vm-scan.yml
+  workflow_dispatch:
+
+jobs:
+  build-image:
+    name: Build PHP demo image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build demo image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./Dockerfile
+          load: true
+          tags: local/external-vm-demo:${{ github.sha }}
+
+      - name: Export image tarball
+        run: docker save local/external-vm-demo:${{ github.sha }} -o external-vm-demo.tar
+
+      - name: Upload image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: external-vm-demo-image
+          path: external-vm-demo.tar
+          if-no-files-found: error
+
+  scan-from-vm-pattern:
+    name: Simulate external VM scanner
+    needs: build-image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download exported image
+        uses: actions/download-artifact@v4
+        with:
+          name: external-vm-demo-image
+
+      - name: Install Trivy CLI
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin
+          trivy --version
+
+      - name: Load image and start container
+        run: |
+          docker load -i external-vm-demo.tar
+          docker run -d --name php-demo-vm-scan -p 8080:80 local/external-vm-demo:${{ github.sha }}
+          docker ps
+
+      - name: Run external scan script
+        run: bash scripts/external-scan.sh --container php-demo-vm-scan --sarif external-vm-results.sarif --skip-upload
+
+      - name: Upload SARIF to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: external-vm-results.sarif
+          category: external-vm-container
