@@ -1,4 +1,4 @@
-FROM python:3.9.18-bullseye
+FROM python:3.13.6-bullseye
 
 LABEL org.opencontainers.image.title="ghas-ado-logic-app container scanning demo"
 LABEL org.opencontainers.image.description="Demo image with intentionally outdated packages so GitHub code scanning can surface container findings."
