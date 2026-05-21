@@ -117,3 +117,23 @@
 
 **Fleet Implementation:** Orchestrated 2026-04-22 with teams Dallas (Approach #1), Brett (Approaches #2-3), and Call (Approaches #4-5) to deliver complete phased automation strategy. Approach #1 confirms Phase 1 viability as zero-cost, ~10-minute entry point.
 
+### Container Scanning Demo Setup (2026)
+
+**Implemented demo-ready GitHub container scanning** for `sautalwar/ghas-ado-logic-app` using a simple Docker image, Trivy SARIF uploads, and Dependabot monitoring.
+
+**Architecture decisions and patterns:**
+- Use **Trivy + SARIF + `github/codeql-action/upload-sarif@v3`** so container findings land in **GitHub Security → Code scanning alerts** instead of living only in workflow logs.
+- Keep the workflow **demo-friendly and non-blocking** with `exit-code: "0"`, allowing alerts to appear in the Security tab without failing the run.
+- Trigger on both **`main` and `master`** because the live repo default branch is `master`, while demo instructions may still reference `main`.
+- Split the workflow into **image scanning** and **Dockerfile config scanning** so the demo can show both package CVEs and configuration findings.
+- Intentionally use an **older Python bullseye image plus outdated Python packages** to make findings visible immediately during a live demo.
+
+**Key file paths:**
+- `Dockerfile` — demo image definition
+- `container-demo/requirements.txt` — intentionally outdated packages for scanning
+- `.github/workflows/container-scan.yml` — build + Trivy + SARIF workflow
+- `.github/dependabot.yml` — Docker base image monitoring
+- `docs/container-scanning-demo.md` — live demo walkthrough
+
+**User preference captured:** Saurabh asked for a clear, working, demo-ready GitHub container scanning setup tied back to the existing ADO/Logic App story.
+
