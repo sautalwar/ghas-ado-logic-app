@@ -137,3 +137,18 @@
 
 **User preference captured:** Saurabh asked for a clear, working, demo-ready GitHub container scanning setup tied back to the existing ADO/Logic App story.
 
+### PHP Security Demo Expansion (2026)
+
+**Expanded the GHAS demo to match the customer's PHP and external-scanner reality.**
+
+**Delivered capabilities:**
+- Replaced the old Python/static container demo with a **legacy `php:7.4-apache` image** and intentionally outdated Composer packages in `container-demo/composer.json`
+- Added an **external VM scanning pattern** via `.github/workflows/external-vm-scan.yml` plus `scripts/external-scan.sh`, showing how Trivy CLI can scan an image or running container and upload SARIF back to GitHub
+- Added **secret scanning demo assets** with `container-demo/config-example.php`, `docs/secret-scanning-demo.md`, and `scripts/create-secret-scanning-pattern.sh` for a safe custom-pattern walkthrough
+- Added **markdown/instruction-file security review** via `.github/workflows/markdown-security-scan.yml`, `scripts/scan-markdown-security.py`, and `docs/markdown-security-scanning-demo.md`
+
+**Key design choices:**
+- Use a **fake internal token format** (`LEARFIELD-DEMO-[A-Z0-9]{16}`) instead of a real vendor-looking credential so the demo is safe to commit while still demonstrating custom secret scanning
+- Use **SARIF as the common integration format** for both external container scanning and markdown security review so findings land in GitHub Security consistently
+- Treat GitHub secret scanning enablement as a **settings/API workflow**, not an in-repo config file, because that mirrors how the product actually works
+
