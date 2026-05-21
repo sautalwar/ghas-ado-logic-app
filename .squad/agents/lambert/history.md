@@ -8,6 +8,13 @@
 
 ## Learnings
 
+### Creating Customer-Facing Container Security Demo Walkthrough (2026-05-21)
+- **Task:** Created a polished single-file HTML walkthrough for a GitHub Advanced Security demo focused on container scanning, external VM scanning, secret scanning, and markdown / AI instruction file security.
+- **Output:** `GitHub_Container_Security_Demo.html` in the repo root.
+- **Content Strategy:** Used a dark GitHub-style visual theme, table of contents, CSS-based architecture diagram, collapsible detail sections, screenshot placeholders with descriptive alt text, setup checklist, and phased recommendations so the file works as both a live demo guide and a leave-behind artifact.
+- **Key Framing:** Positioned GitHub as the detection and review plane while Azure DevOps remains the downstream work-management plane through the existing Logic App automation pattern already documented in this project.
+- **Communication Pattern:** Kept the message customer-friendly by emphasizing “keep your current VM scanner, centralize the alerts” rather than forcing a rip-and-replace story; also highlighted markdown and AI instruction files as a modern blind spot that broadens the demo beyond traditional source code scanning.
+
 ### Creating Project Journey Documentation (2026-04-21)
 - **Task:** Created comprehensive Project Journey PDF documenting the entire evolution of the GHAzDO + ADO integration project from initial Logic App through customer feedback, team expansion, exploration of 21 alternatives, and implementation of Top 5 approaches
 - **Output:** Project_Journey_Documentation.pdf (31KB, 10 chapters covering the complete project narrative in plain language)
@@ -48,3 +55,9 @@
   - Helpful: Offered no-pressure starting point with clear upgrade paths
   - Transparent: Showed work ("explored 21 approaches") without overwhelming details
 - **Key Principle:** When customers say no, they're often pointing at the wrong solution, not the wrong goal. Michael said "too much infrastructure" — that's not a rejection of automation, it's a preference for simplicity. We gave him simplicity options with automation available if needed.
+
+### Container Security Demo Orchestration (2026-05-21)
+- **Task:** As part of Scribe coordination, created HTML customer demo walkthrough in parallel with Dallas's container scanning and PHP security expansion work.
+- **Coordination metrics:** Three agents (Dallas x2 phases, Lambert) deployed in background mode for parallel execution; orchestration logs created documenting each phase; session log summarizing overall deliverables; decision records consolidated into decisions.md; cross-agent history updates recorded.
+- **Integration:** HTML demo walkthrough serves as pre-meeting planning guide, during-demo reference, and post-demo leave-behind collateral for Learfield team.
+- **Ready for customer engagement:** Combined with Dallas's container + PHP + external VM + secret + markdown scanning patterns, full end-to-end demo story ready for live walkthrough.

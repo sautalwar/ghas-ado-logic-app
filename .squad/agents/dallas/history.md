@@ -152,3 +152,20 @@
 - Use **SARIF as the common integration format** for both external container scanning and markdown security review so findings land in GitHub Security consistently
 - Treat GitHub secret scanning enablement as a **settings/API workflow**, not an in-repo config file, because that mirrors how the product actually works
 
+### Container Security Demo Orchestration (2026-05-21)
+
+**Orchestrated parallel execution of container scanning, PHP expansion, and HTML customer walkthrough creation.**
+
+**Delivered as part of Scribe coordination:**
+- Three agents deployed in background mode for parallel execution (Dallas container + PHP expansion, Lambert HTML demo)
+- Created orchestration logs documenting container scanning phase and PHP security expansion with design rationale
+- Session log created summarizing deliverables, agents, metrics, and next steps
+- Decision records consolidated from inbox into decisions.md (container scanning pattern, PHP pattern, all marked Accepted)
+- Updated Dallas and Lambert history.md with cross-agent coordination record
+
+**Key coordination metrics:**
+- Parallel execution reduced time to delivery compared to sequential approach
+- All three scanning tiers (container, external VM, secret+markdown) unified under GHAS detection plane
+- Customer demo HTML artifact positioned as pre-demo, during-demo, and leave-behind collateral
+- Ready for Learfield team engagement and live walkthrough
+
