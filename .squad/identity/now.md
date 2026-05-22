@@ -18,7 +18,16 @@ Building a comprehensive GitHub Advanced Security demo for Learfield (Michael Hu
 5. **HTML Overview** — `GitHub_Container_Security_Demo.html` (polished dark-theme overview page)
 
 ### In Progress
-- **Step-by-step walkthrough HTML** — Lambert is building `GitHub_Container_Security_Walkthrough.html` with 26 numbered steps, [DO]/[SAY]/[SHOW]/[WHY] tags, color-coded sections. Agent `lambert-step-by-step` was launched and should be checked on next session start.
+- Nothing — all deliverables complete and pushed.
+
+### Also Completed
+6. **Step-by-step Walkthrough HTML** — `GitHub_Container_Security_Walkthrough.html` (26 steps, [DO]/[SAY]/[SHOW]/[WHY] tags, sidebar nav, progress bar)
+
+### Repo Status
+- All changes pushed to GitHub ✅
+- Repo set to **private** ✅
+- Secrets cleaned from git history (filter-branch) ✅
+- Session transcript file removed (contained ADO PAT patterns)
 
 ### Key Files
 - `Dockerfile` — PHP 7.4 Apache with intentional vulnerabilities
@@ -32,6 +41,7 @@ Building a comprehensive GitHub Advanced Security demo for Learfield (Michael Hu
 - `docs/secret-scanning-demo.md` — Secret scanning docs
 - `docs/markdown-security-scanning-demo.md` — Markdown security docs
 - `GitHub_Container_Security_Demo.html` — Overview HTML
+- `GitHub_Container_Security_Walkthrough.html` — 26-step live demo runbook
 - Live workflow run: https://github.com/sautalwar/ghas-ado-logic-app/actions/runs/26240845316
 
 ### Customer Context
@@ -42,7 +52,6 @@ Building a comprehensive GitHub Advanced Security demo for Learfield (Michael Hu
 - Repo: https://github.com/sautalwar/ghas-ado-logic-app
 
 ### Resume Instructions
-1. Check if `lambert-step-by-step` agent completed — read results and present the walkthrough HTML
-2. If not completed, re-spawn Lambert to create the step-by-step walkthrough
-3. Commit and push any uncommitted work
-4. Ask Saurabh if anything needs adjustment before the customer demo
+1. All deliverables are complete and pushed — no pending work
+2. Ask Saurabh what's next: run the demo, adjust content, or start a new feature
+3. Both HTML files are ready to open in browser for the customer demo
