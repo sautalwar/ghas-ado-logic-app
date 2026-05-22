@@ -1,6 +1,6 @@
 # Container Scanning Demo
 
-This repo now includes a realistic **legacy PHP container** plus GitHub Actions workflows that publish findings into **Security → Code scanning alerts**.
+This repo now includes a demo container image and a GitHub Actions workflow that publishes container findings into **Security → Code scanning alerts**.
 
 ## What container scanning is
 
@@ -9,22 +9,18 @@ Container scanning looks for known vulnerabilities and risky configuration insid
 - **Application libraries** installed into the image
 - **Dockerfile misconfigurations** such as insecure defaults
 
-For this demo, the image intentionally uses **`php:7.4-apache`** and outdated Composer packages so Trivy produces findings that are easy to show live.
+For this demo, the `Dockerfile` intentionally uses an older base image and outdated Python packages so Trivy can produce alerts that are easy to show live.
 
 ## Demo assets in this repo
 
-- `Dockerfile` — legacy PHP 7.4 Apache image
-- `container-demo/index.php` — simple PHP application
-- `container-demo/composer.json` — intentionally outdated Composer dependencies
-- `container-demo/config-example.php` — demo config file for secret scanning walkthroughs
-- `.github/workflows/container-scan.yml` — standard GitHub-hosted image + Dockerfile scanning
-- `.github/workflows/external-vm-scan.yml` — simulates an external VM scanning pattern
-- `scripts/external-scan.sh` — VM-friendly Trivy + SARIF upload script
-- `.github/dependabot.yml` — watches both Docker and Composer dependencies
+- `Dockerfile` — builds the demo image
+- `container-demo/requirements.txt` — intentionally outdated packages for visible findings
+- `.github/workflows/container-scan.yml` — builds and scans the image with Trivy
+- `.github/dependabot.yml` — watches the Docker base image for updates
 
-## How the main workflow works
+## How the workflow works
 
-The `Container scanning` workflow runs on:
+The workflow runs on:
 - pushes to `main` or `master`
 - pull requests targeting `main` or `master`
 - manual runs through **Actions → Container scanning → Run workflow**
@@ -32,7 +28,7 @@ The `Container scanning` workflow runs on:
 It performs two scans:
 
 1. **Image scan**
-   - Builds the PHP image locally in GitHub Actions
+   - Builds the Docker image locally in GitHub Actions
    - Runs Trivy against OS and library packages
    - Uploads SARIF results with `github/codeql-action/upload-sarif@v3`
 
@@ -40,67 +36,46 @@ It performs two scans:
    - Runs Trivy config checks against `Dockerfile`
    - Uploads SARIF results to GitHub Security as a separate category
 
-## External VM scanning pattern
-
-The customer mental model is also supported:
-
-1. Build or pull the image on an external VM
-2. Run `scripts/external-scan.sh` with Trivy CLI on that VM
-3. Produce SARIF locally
-4. Upload the SARIF back to GitHub code scanning
-
-The `External VM scanning pattern` workflow simulates this by:
-- building the image
-- exporting it as a tarball
-- loading and running it in a second job that acts like the VM
-- scanning the running container via Trivy CLI
-- uploading SARIF to GitHub Security
-
 ## How to trigger the demo
 
-### Option 1: Standard GitHub-hosted scan
+### Option 1: Push the current setup
 1. Commit and push these changes
-2. Open **Actions**
+2. Open **Actions** in GitHub
 3. Select **Container scanning**
 4. Open the latest workflow run
 
-### Option 2: External VM pattern
-1. Open **Actions**
-2. Select **External VM scanning pattern**
-3. Run the workflow manually, or trigger it with a change to `Dockerfile` or `container-demo/`
-4. Show that the second job acts like an off-platform scanner that still lands findings in GitHub Security
-
-### Option 3: Pull request demo
+### Option 2: Create a pull request demo
 1. Create a new branch
-2. Change `container-demo/composer.json` or `Dockerfile`
+2. Change `container-demo/requirements.txt` or `Dockerfile`
 3. Open a pull request into `master`
 4. Show the workflow run and resulting alerts
 
+### Option 3: Manual run
+1. Open **Actions**
+2. Choose **Container scanning**
+3. Click **Run workflow**
+
 ## Where to see results
 
-After a workflow finishes:
+After the workflow finishes:
 1. Open the repository in GitHub
 2. Go to **Security**
 3. Select **Code scanning alerts**
-4. Filter by categories such as `container-image`, `dockerfile-misconfig`, or `external-vm-container`
+4. Filter by categories such as `container-image` or `dockerfile-misconfig`
 
-This is the cleanest demo path because container findings show up in the same GHAS Security experience used for other scans.
+This is the cleanest demo path because it shows container findings in the same Security experience used for other GHAS scans.
 
-## Dependabot coverage
+## Dependabot for base image updates
 
-Dependabot is configured to monitor:
-- the root `Dockerfile` for base image updates
-- `container-demo/composer.json` for PHP library updates
-
-That gives you a remediation story immediately after showing the scan findings.
+Dependabot is configured to monitor the root `Dockerfile`. When the base image tag changes upstream, GitHub can open a pull request suggesting an updated image.
 
 ## Suggested live demo script
 
-1. Show the `Dockerfile` and point out `php:7.4-apache`
-2. Open `container-demo/composer.json` and highlight the intentionally outdated PHP packages
-3. Run either **Container scanning** or **External VM scanning pattern**
-4. Open **Security → Code scanning alerts** and review findings from the container image
-5. Explain that GitHub remains the detection layer while the existing ADO automation can still be the downstream work-management layer
+1. Show the `Dockerfile` and point out the intentionally outdated packages
+2. Push a small change or manually run the workflow
+3. Open the Actions run and show the image build + Trivy steps
+4. Open **Security → Code scanning alerts** and review the findings
+5. Explain that the same repository can feed alerts into the existing ADO automation story
 
 ## How this ties back to ADO and the Logic App
 

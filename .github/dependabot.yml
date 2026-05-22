@@ -9,13 +9,3 @@ updates:
       - docker
     commit-message:
       prefix: chore
-
-  - package-ecosystem: composer
-    directory: "/container-demo"
-    schedule:
-      interval: weekly
-    labels:
-      - dependencies
-      - php
-    commit-message:
-      prefix: chore
