@@ -8,6 +8,13 @@
 
 ## Learnings
 
+### Creating Live Step-by-Step Container Security Walkthrough (2026-05-22)
+- **Task:** Created a second-screen live demo runbook HTML for Saurabh that expands the existing overview into an exact click-by-click walkthrough for Learfield / Michael Hubicka.
+- **Output:** `GitHub_Container_Security_Walkthrough.html` in the repo root.
+- **Structure:** Organized the walkthrough into pre-demo setup plus 26 numbered steps spanning container scanning, external VM SARIF upload, secret scanning, markdown / AI instruction-file review, and Logic App to ADO integration.
+- **Presentation Pattern:** Matched the existing GitHub dark theme, added a sticky navigation sidebar, progress bar, colored step cards by demo section, [DO]/[SAY]/[SHOW]/[WHY] badges, durations, fallback plans, and collapsible notes so the file works during a live customer call without needing separate notes.
+- **Customer Framing:** Kept the story anchored on Learfield's likely operating model: legacy PHP containers, possible existing VM-based scanning, GitHub as the shared detection / triage plane, and Azure DevOps as the downstream work-management plane.
+
 ### Creating Customer-Facing Container Security Demo Walkthrough (2026-05-21)
 - **Task:** Created a polished single-file HTML walkthrough for a GitHub Advanced Security demo focused on container scanning, external VM scanning, secret scanning, and markdown / AI instruction file security.
 - **Output:** `GitHub_Container_Security_Demo.html` in the repo root.
