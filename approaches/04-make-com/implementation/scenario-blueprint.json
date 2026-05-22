@@ -1,0 +1,213 @@
+{
+  "_comment": "Make.com Scenario Blueprint — GHAzDO Security Alert → ADO Work Item. This is a representative blueprint of the Make.com scenario structure. Make.com uses a proprietary JSON format for scenario import/export. To import: Make.com → Scenarios → Import Blueprint → paste this JSON.",
+  "name": "GHAzDO Security Alert → ADO Work Item",
+  "flow": [
+    {
+      "id": 1,
+      "module": "gateway:CustomWebHook",
+      "version": 1,
+      "metadata": {
+        "designer": { "x": 0, "y": 0 }
+      },
+      "parameters": {
+        "hook": {
+          "name": "GHAzDO Alert Receiver",
+          "type": "web"
+        },
+        "maxResults": 1
+      }
+    },
+    {
+      "id": 2,
+      "module": "json:ParseJSON",
+      "version": 1,
+      "metadata": {
+        "designer": { "x": 300, "y": 0 }
+      },
+      "parameters": {
+        "type": "json",
+        "json": "{{1.body}}"
+      },
+      "mapper": {
+        "json": "{{1.body}}"
+      }
+    },
+    {
+      "id": 3,
+      "module": "builtin:BasicRouter",
+      "version": 1,
+      "metadata": {
+        "designer": {
+          "x": 600,
+          "y": 0,
+          "name": "Event Type Router"
+        }
+      },
+      "routes": [
+        {
+          "flow": [
+            {
+              "id": 4,
+              "module": "http:ActionSendData",
+              "version": 3,
+              "metadata": {
+                "designer": { "x": 900, "y": -150 },
+                "name": "WIQL Dedup Check"
+              },
+              "parameters": {
+                "url": "https://dev.azure.com/{{vars.adoOrganization}}/{{vars.adoProject}}/_apis/wit/wiql?api-version=7.1",
+                "method": "POST",
+                "headers": [
+                  {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "name": "Authorization",
+                    "value": "Basic {{base64(\":\" + vars.adoPat)}}"
+                  }
+                ],
+                "contentType": "raw",
+                "rawContentType": "application/json",
+                "body": "{\"query\": \"SELECT [System.Id] FROM WorkItems WHERE [System.Tags] CONTAINS 'GHAzDO-{{2.resource.repository.name}}-{{2.resource.alertId}}' AND [System.State] <> 'Removed'\"}"
+              }
+            },
+            {
+              "id": 5,
+              "module": "azuredevops:ActionCreateWorkItem",
+              "version": 1,
+              "metadata": {
+                "designer": { "x": 1200, "y": -150 },
+                "name": "Create Work Item"
+              },
+              "parameters": {
+                "connection": "ADO - GHAzDO Integration",
+                "workItemType": "Issue"
+              },
+              "mapper": {
+                "title": "{{if(2.resource.alertType = \"secret\"; \"[GHAzDO-Secret] \" + ifempty(2.resource.secretType; \"Secret detected\"); if(2.resource.alertType = \"code\"; \"[GHAzDO-CodeScan] \" + ifempty(2.resource.title; \"Code scanning alert\"); if(2.resource.alertType = \"dependency\"; \"[GHAzDO-Dependency] \" + ifempty(2.resource.title; \"Dependency alert\"); \"[GHAzDO-Alert] \" + ifempty(2.resource.title; \"Security alert\"))))}}",
+                "description": "<h3>GHAzDO Security Alert</h3><table border='1' cellpadding='5'><tr><td><b>Alert Type</b></td><td>{{2.resource.alertType}}</td></tr><tr><td><b>Severity</b></td><td>{{2.resource.severity}}</td></tr><tr><td><b>Repository</b></td><td>{{2.resource.repository.name}}</td></tr><tr><td><b>File</b></td><td>{{ifempty(2.resource.location.file; \"N/A\")}}</td></tr><tr><td><b>Alert ID</b></td><td>{{2.resource.alertId}}</td></tr></table><p><a href='{{2.resource.link}}'>View Alert in Azure DevOps</a></p><hr/><p><i>Auto-created by Make.com GHAzDO Integration</i></p>",
+                "tags": "GHAzDO;{{2.resource.alertType}};{{2.resource.severity}};GHAzDO-{{2.resource.repository.name}}-{{2.resource.alertId}}",
+                "priority": "{{if(or(2.resource.severity = \"critical\"; 2.resource.severity = \"high\"); 1; if(2.resource.severity = \"medium\"; 2; 3))}}"
+              },
+              "filter": {
+                "name": "No Duplicate Found",
+                "conditions": [
+                  {
+                    "a": "{{length(4.body.workItems)}}",
+                    "o": "equal",
+                    "b": "0"
+                  }
+                ]
+              }
+            }
+          ],
+          "filter": {
+            "name": "Alert Created",
+            "conditions": [
+              {
+                "a": "{{2.eventType}}",
+                "o": "text:contains",
+                "b": "created"
+              }
+            ]
+          }
+        },
+        {
+          "flow": [
+            {
+              "id": 6,
+              "module": "http:ActionSendData",
+              "version": 3,
+              "metadata": {
+                "designer": { "x": 900, "y": 150 },
+                "name": "Find Work Item to Close"
+              },
+              "parameters": {
+                "url": "https://dev.azure.com/{{vars.adoOrganization}}/{{vars.adoProject}}/_apis/wit/wiql?api-version=7.1",
+                "method": "POST",
+                "headers": [
+                  {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "name": "Authorization",
+                    "value": "Basic {{base64(\":\" + vars.adoPat)}}"
+                  }
+                ],
+                "contentType": "raw",
+                "rawContentType": "application/json",
+                "body": "{\"query\": \"SELECT [System.Id] FROM WorkItems WHERE [System.Tags] CONTAINS 'GHAzDO-{{2.resource.repository.name}}-{{2.resource.alertId}}' AND [System.State] <> 'Done' AND [System.State] <> 'Removed'\"}"
+              }
+            },
+            {
+              "id": 7,
+              "module": "azuredevops:ActionUpdateWorkItem",
+              "version": 1,
+              "metadata": {
+                "designer": { "x": 1200, "y": 150 },
+                "name": "Close Work Item"
+              },
+              "parameters": {
+                "connection": "ADO - GHAzDO Integration"
+              },
+              "mapper": {
+                "workItemId": "{{6.body.workItems[0].id}}",
+                "state": "Done",
+                "history": "Auto-closed: GHAzDO alert resolved/fixed."
+              },
+              "filter": {
+                "name": "Work Item Found",
+                "conditions": [
+                  {
+                    "a": "{{length(6.body.workItems)}}",
+                    "o": "greater",
+                    "b": "0"
+                  }
+                ]
+              }
+            }
+          ],
+          "filter": {
+            "name": "State Changed",
+            "conditions": [
+              {
+                "a": "{{2.eventType}}",
+                "o": "text:contains",
+                "b": "stateChanged"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "version": 1,
+    "scenario": {
+      "roundtrips": 1,
+      "maxErrors": 3,
+      "autoCommit": true,
+      "autoCommitTriggerLast": true,
+      "sequential": false
+    }
+  },
+  "variables": [
+    {
+      "name": "adoOrganization",
+      "type": "text",
+      "description": "Azure DevOps organization name"
+    },
+    {
+      "name": "adoProject",
+      "type": "text",
+      "description": "Azure DevOps project name"
+    },
+    {
+      "name": "adoPat",
+      "type": "text",
+      "description": "Azure DevOps Personal Access Token (encrypted at rest)"
+    }
+  ]
+}

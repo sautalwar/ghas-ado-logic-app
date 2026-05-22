@@ -1,0 +1,32 @@
+{
+  "$schema": "https://dev.azure.com/schema/work-item-template/1.0",
+  "_comment": "ADO Work Item Template — GHAzDO Security Alert. Import via ADO REST API or recreate manually via Boards > Templates.",
+  "name": "GHAzDO Security Alert",
+  "description": "Template for creating work items from GHAzDO Advanced Security alerts (secret scanning, code scanning, dependency alerts)",
+  "workItemTypeName": "Bug",
+  "fields": {
+    "System.Tags": "GHAzDO; security; triage",
+    "System.AreaPath": "{Project}\\Security",
+    "System.IterationPath": "{Project}\\{Current Sprint}",
+    "Microsoft.VSTS.Common.Priority": 2,
+    "Microsoft.VSTS.Common.Severity": "2 - High",
+    "System.Description": "<h2>🔒 GHAzDO Security Alert</h2><h3>Alert Details</h3><table><tr><td><b>Alert Type:</b></td><td>[Secret Scanning / Code Scanning / Dependency]</td></tr><tr><td><b>Repository:</b></td><td>[repo name]</td></tr><tr><td><b>Alert Severity:</b></td><td>[Critical / High / Medium / Low]</td></tr><tr><td><b>Alert URL:</b></td><td>[paste link from GHAzDO]</td></tr><tr><td><b>File/Location:</b></td><td>[affected file path]</td></tr><tr><td><b>Date Detected:</b></td><td>[date]</td></tr></table><h3>Remediation Steps</h3><ol><li>Review the alert in GHAzDO Advanced Security</li><li>Determine if the finding is a true positive or false positive</li><li>If true positive: implement the fix</li><li>If false positive: dismiss the alert with justification</li><li>Verify the alert is resolved in GHAzDO</li><li>Close this work item</li></ol><h3>Acceptance Criteria</h3><ul><li>[ ] Alert reviewed and triaged</li><li>[ ] Fix implemented OR false positive documented</li><li>[ ] GHAzDO alert status is Closed or Dismissed</li><li>[ ] No regression introduced</li></ul>",
+    "Microsoft.VSTS.TCM.ReproSteps": "<ol><li>Navigate to ADO → Repos → Advanced Security</li><li>Locate the alert referenced in this work item</li><li>Follow the remediation guidance provided by GHAzDO</li><li>Verify the fix resolves the alert</li></ol>"
+  },
+  "_usage": {
+    "manual_creation": "Boards → Board Settings → Templates → + New template → paste these field values",
+    "api_creation": "POST https://dev.azure.com/{org}/{project}/{team}/_apis/wit/templates?api-version=7.1-preview.1",
+    "api_body_note": "The API expects a slightly different format: { 'fields': { ... }, 'name': '...', 'workItemTypeName': '...' }"
+  },
+  "_customization_notes": {
+    "area_path": "Replace {Project}\\Security with your actual project and area path",
+    "iteration_path": "Replace with your current sprint/iteration path",
+    "assigned_to": "Optionally add 'System.AssignedTo' field with your security lead's email",
+    "priority_mapping": {
+      "critical_ghazdo_alert": "Priority 1",
+      "high_ghazdo_alert": "Priority 2 (template default)",
+      "medium_ghazdo_alert": "Priority 3",
+      "low_ghazdo_alert": "Priority 4"
+    }
+  }
+}

@@ -1,0 +1,85 @@
+-- =============================================================================
+-- GHAzDO Open Security Alerts — WIQL Query
+-- =============================================================================
+-- Purpose: Lists all open work items created from GHAzDO security alerts
+-- Usage:  ADO → Boards → Queries → New Query → switch to WIQL mode → paste
+-- Dashboard: Add as "Query Results" or "Chart for Work Items" widget
+-- =============================================================================
+
+-- Query 1: All Open GHAzDO Security Items
+-- Shows all active security work items tagged with GHAzDO
+SELECT
+    [System.Id],
+    [System.Title],
+    [System.State],
+    [System.AssignedTo],
+    [Microsoft.VSTS.Common.Priority],
+    [Microsoft.VSTS.Common.Severity],
+    [System.Tags],
+    [System.AreaPath],
+    [System.CreatedDate],
+    [System.ChangedDate]
+FROM WorkItems
+WHERE
+    [System.TeamProject] = @project
+    AND [System.WorkItemType] = 'Bug'
+    AND [System.Tags] CONTAINS 'GHAzDO'
+    AND [System.State] NOT IN ('Closed', 'Removed')
+ORDER BY [Microsoft.VSTS.Common.Priority] ASC, [System.CreatedDate] DESC
+
+-- =============================================================================
+-- Query 2: GHAzDO Items by Priority (for Chart widget)
+-- Use this with a "Chart for Work Items" widget, grouped by Priority
+-- =============================================================================
+--
+-- SELECT
+--     [System.Id],
+--     [System.Title],
+--     [Microsoft.VSTS.Common.Priority],
+--     [System.State]
+-- FROM WorkItems
+-- WHERE
+--     [System.TeamProject] = @project
+--     AND [System.Tags] CONTAINS 'GHAzDO'
+--     AND [System.State] NOT IN ('Closed', 'Removed')
+-- ORDER BY [Microsoft.VSTS.Common.Priority] ASC
+
+-- =============================================================================
+-- Query 3: Recently Closed GHAzDO Items (last 30 days)
+-- For tracking resolution velocity
+-- =============================================================================
+--
+-- SELECT
+--     [System.Id],
+--     [System.Title],
+--     [System.State],
+--     [System.AssignedTo],
+--     [Microsoft.VSTS.Common.ClosedDate],
+--     [System.CreatedDate]
+-- FROM WorkItems
+-- WHERE
+--     [System.TeamProject] = @project
+--     AND [System.Tags] CONTAINS 'GHAzDO'
+--     AND [System.State] = 'Closed'
+--     AND [Microsoft.VSTS.Common.ClosedDate] >= @today - 30
+-- ORDER BY [Microsoft.VSTS.Common.ClosedDate] DESC
+
+-- =============================================================================
+-- Query 4: Aging Security Items (open > 7 days)
+-- For identifying stale/unresolved security findings
+-- =============================================================================
+--
+-- SELECT
+--     [System.Id],
+--     [System.Title],
+--     [System.State],
+--     [System.AssignedTo],
+--     [System.CreatedDate],
+--     [Microsoft.VSTS.Common.Priority]
+-- FROM WorkItems
+-- WHERE
+--     [System.TeamProject] = @project
+--     AND [System.Tags] CONTAINS 'GHAzDO'
+--     AND [System.State] NOT IN ('Closed', 'Removed')
+--     AND [System.CreatedDate] <= @today - 7
+-- ORDER BY [System.CreatedDate] ASC

@@ -1,0 +1,93 @@
+{
+  "_comment": "ADO Service Hook configurations for Zapier integration. Two hooks needed: one for alert created, one for state changed.",
+
+  "serviceHooks": [
+    {
+      "name": "GHAzDO Alert Created → Zapier (Create Work Item)",
+      "consumer": "webHooks",
+      "consumerAction": "httpRequest",
+      "event": {
+        "eventType": "ms.vss-code.advancedsecurity-alert-created-event",
+        "publisherId": "ms.vss-code.advancedsecurity",
+        "friendlyName": "Advanced Security alert created",
+        "description": "Fires when a new GHAzDO security alert is detected (secret, code scan, or dependency)"
+      },
+      "publisherInputs": {
+        "projectId": "{YOUR_PROJECT_ID}",
+        "repository": "",
+        "_comment_repository": "Leave empty for all repos, or set specific repo GUID"
+      },
+      "consumerInputs": {
+        "url": "https://hooks.zapier.com/hooks/catch/{ACCOUNT_ID}/{ZAP_HOOK_ID_CREATE}/",
+        "httpHeaders": "",
+        "resourceDetailsToSend": "all",
+        "messagesToSend": "all",
+        "detailedMessagesToSend": "all"
+      },
+      "zapierNotes": {
+        "webhookUrl": "Get this from Zapier Zap #1 → Catch Hook trigger step",
+        "testPayload": "Use ADO Service Hook 'Test' button to send sample event to Zapier"
+      }
+    },
+    {
+      "name": "GHAzDO Alert State Changed → Zapier (Close Work Item)",
+      "consumer": "webHooks",
+      "consumerAction": "httpRequest",
+      "event": {
+        "eventType": "ms.vss-code.advancedsecurity-alert-state-changed-event",
+        "publisherId": "ms.vss-code.advancedsecurity",
+        "friendlyName": "Advanced Security alert state changed",
+        "description": "Fires when a GHAzDO alert state changes (e.g., active → fixed, active → dismissed)"
+      },
+      "publisherInputs": {
+        "projectId": "{YOUR_PROJECT_ID}",
+        "repository": "",
+        "_comment_repository": "Leave empty for all repos, or set specific repo GUID"
+      },
+      "consumerInputs": {
+        "url": "https://hooks.zapier.com/hooks/catch/{ACCOUNT_ID}/{ZAP_HOOK_ID_CLOSE}/",
+        "httpHeaders": "",
+        "resourceDetailsToSend": "all",
+        "messagesToSend": "all",
+        "detailedMessagesToSend": "all"
+      },
+      "zapierNotes": {
+        "webhookUrl": "Get this from Zapier Zap #2 → Catch Hook trigger step",
+        "testPayload": "Use ADO Service Hook 'Test' button to send sample event to Zapier"
+      }
+    }
+  ],
+
+  "nativeZapierConsumer": {
+    "_comment": "ADO Service Hooks list Zapier as a native consumer, but it only supports standard ADO events (work item, code push, build, release). GHAzDO advancedsecurity.alert.* events are NOT available through the native Zapier consumer.",
+    "supported": false,
+    "reason": "GHAzDO Advanced Security events (advancedsecurity.alert.created, advancedsecurity.alert.stateChanged) are not included in the native Zapier consumer's event list. These are newer event types specific to GitHub Advanced Security for Azure DevOps.",
+    "workaround": "Use the Web Hooks consumer (as configured above) to POST GHAzDO events to Zapier's Catch Hook URL.",
+    "nativeZapierEvents": [
+      "workitem.created",
+      "workitem.updated",
+      "workitem.deleted",
+      "workitem.commented",
+      "code.pushed",
+      "build.complete",
+      "release.created",
+      "release.deployment.completed",
+      "tfvc.checkin"
+    ]
+  },
+
+  "setup": {
+    "steps": [
+      "1. In Azure DevOps, go to Project Settings → Service Hooks",
+      "2. Click '+ Create subscription'",
+      "3. Select 'Web Hooks' as the consumer (NOT 'Zapier' — see nativeZapierConsumer note)",
+      "4. For hook #1: Event = 'Advanced Security alert created'",
+      "5. For hook #2: Event = 'Advanced Security alert state changed'",
+      "6. Paste the respective Zapier webhook URL in the URL field",
+      "7. Set 'Resource details to send' = 'All'",
+      "8. Click 'Test' to verify Zapier receives the payload",
+      "9. Click 'Finish' to save"
+    ],
+    "permissions": "Project Administrator or Service Hook Administrator role required"
+  }
+}

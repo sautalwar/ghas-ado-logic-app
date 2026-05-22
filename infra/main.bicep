@@ -66,3 +66,18 @@ output secretScanLogicAppResourceId string = secretScanLogicApp.outputs.logicApp
 output autocloseCallbackUrl string = autocloseLogicApp.outputs.triggerUrl
 output autocloseLogicAppName string = autocloseLogicApp.outputs.logicAppName
 output autocloseLogicAppResourceId string = autocloseLogicApp.outputs.logicAppResourceId
+
+module ghazdoFullAutomation 'modules/ghazdo-logic-app.bicep' = {
+  name: 'ghazdo-full-automation-logic-app'
+  params: {
+    location: location
+    adoOrganization: adoOrganization
+    adoProject: adoProject
+    adoPat: adoPat
+    workItemType: workItemType
+  }
+}
+
+output ghazdoFullCallbackUrl string = ghazdoFullAutomation.outputs.triggerUrl
+output ghazdoFullLogicAppName string = ghazdoFullAutomation.outputs.logicAppName
+output ghazdoFullLogicAppResourceId string = ghazdoFullAutomation.outputs.logicAppResourceId

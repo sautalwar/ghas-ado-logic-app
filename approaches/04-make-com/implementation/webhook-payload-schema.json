@@ -1,0 +1,236 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "GHAzDO Alert Webhook Payload",
+  "description": "Expected payload from Azure DevOps Service Hook for GitHub Advanced Security alert events. Use this schema in Make.com's JSON Parse module (paste as sample data for auto-generation).",
+  "type": "object",
+  "properties": {
+    "subscriptionId": {
+      "type": "string",
+      "description": "ADO Service Hook subscription ID"
+    },
+    "notificationId": {
+      "type": "integer",
+      "description": "Notification sequence number"
+    },
+    "id": {
+      "type": "string",
+      "description": "Event unique identifier (GUID)"
+    },
+    "eventType": {
+      "type": "string",
+      "description": "Event type — determines create vs close branch",
+      "enum": [
+        "advancedsecurity.alert.created",
+        "advancedsecurity.alert.stateChanged"
+      ]
+    },
+    "publisherId": {
+      "type": "string",
+      "description": "Always 'AdvancedSecurity' for GHAzDO events"
+    },
+    "message": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "description": "Human-readable event description"
+        },
+        "html": {
+          "type": "string",
+          "description": "HTML-formatted event description"
+        }
+      }
+    },
+    "resource": {
+      "type": "object",
+      "description": "The alert resource — contains all alert details",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "Alert ID (numeric)"
+        },
+        "alertId": {
+          "type": "integer",
+          "description": "Alert ID (alias)"
+        },
+        "alertType": {
+          "type": "string",
+          "description": "Type of security alert",
+          "enum": ["secret", "code", "dependency"]
+        },
+        "title": {
+          "type": "string",
+          "description": "Alert title (for code/dependency alerts)"
+        },
+        "secretType": {
+          "type": "string",
+          "description": "Type of secret detected (for secret alerts only)"
+        },
+        "severity": {
+          "type": "string",
+          "description": "Alert severity level",
+          "enum": ["critical", "high", "medium", "low"]
+        },
+        "state": {
+          "type": "string",
+          "description": "Current alert state",
+          "enum": ["active", "fixed", "dismissed"]
+        },
+        "link": {
+          "type": "string",
+          "description": "URL to view alert in Azure DevOps"
+        },
+        "url": {
+          "type": "string",
+          "description": "API URL for the alert"
+        },
+        "repository": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "Repository name"
+            },
+            "id": {
+              "type": "string",
+              "description": "Repository GUID"
+            }
+          }
+        },
+        "location": {
+          "type": "object",
+          "description": "File location details (code/secret alerts)",
+          "properties": {
+            "file": {
+              "type": "string",
+              "description": "File path"
+            },
+            "path": {
+              "type": "string",
+              "description": "Alternate file path field"
+            },
+            "line": {
+              "type": "integer",
+              "description": "Line number"
+            }
+          }
+        },
+        "rule": {
+          "type": "object",
+          "description": "Code scanning rule details",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "description": {
+              "type": "string"
+            }
+          }
+        },
+        "advisoryTitle": {
+          "type": "string",
+          "description": "Advisory title (dependency alerts)"
+        }
+      }
+    },
+    "createdDate": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the event was created"
+    }
+  },
+  "required": ["eventType", "resource"],
+
+  "examples": [
+    {
+      "_comment": "Secret Scanning Alert — Created",
+      "subscriptionId": "sub-guid-1234",
+      "notificationId": 1,
+      "id": "event-guid-5678",
+      "eventType": "advancedsecurity.alert.created",
+      "publisherId": "AdvancedSecurity",
+      "message": {
+        "text": "A new secret scanning alert was created",
+        "html": "<p>A new secret scanning alert was created</p>"
+      },
+      "resource": {
+        "id": 42,
+        "alertId": 42,
+        "alertType": "secret",
+        "title": "Azure Storage Account Key detected",
+        "secretType": "Azure Storage Account Key",
+        "severity": "critical",
+        "state": "active",
+        "link": "https://dev.azure.com/my-org/my-project/_git/my-repo/alerts/42",
+        "repository": {
+          "name": "my-repo",
+          "id": "repo-guid-9012"
+        },
+        "location": {
+          "file": "config/settings.py",
+          "line": 15
+        }
+      },
+      "createdDate": "2026-04-21T14:30:00Z"
+    },
+    {
+      "_comment": "Code Scanning Alert — Created",
+      "subscriptionId": "sub-guid-1234",
+      "notificationId": 2,
+      "id": "event-guid-abcd",
+      "eventType": "advancedsecurity.alert.created",
+      "publisherId": "AdvancedSecurity",
+      "message": {
+        "text": "A new code scanning alert was created"
+      },
+      "resource": {
+        "id": 101,
+        "alertId": 101,
+        "alertType": "code",
+        "title": "SQL Injection vulnerability",
+        "severity": "high",
+        "state": "active",
+        "link": "https://dev.azure.com/my-org/my-project/_git/my-repo/alerts/101",
+        "repository": {
+          "name": "my-repo",
+          "id": "repo-guid-9012"
+        },
+        "location": {
+          "file": "src/api/users.js",
+          "line": 88
+        },
+        "rule": {
+          "id": "js/sql-injection",
+          "description": "SQL Injection"
+        }
+      },
+      "createdDate": "2026-04-21T15:00:00Z"
+    },
+    {
+      "_comment": "Dependency Alert — State Changed to Fixed",
+      "subscriptionId": "sub-guid-1234",
+      "notificationId": 3,
+      "id": "event-guid-efgh",
+      "eventType": "advancedsecurity.alert.stateChanged",
+      "publisherId": "AdvancedSecurity",
+      "message": {
+        "text": "A dependency alert state was changed to fixed"
+      },
+      "resource": {
+        "id": 77,
+        "alertId": 77,
+        "alertType": "dependency",
+        "title": "lodash prototype pollution",
+        "advisoryTitle": "Prototype Pollution in lodash",
+        "severity": "medium",
+        "state": "fixed",
+        "link": "https://dev.azure.com/my-org/my-project/_git/my-repo/alerts/77",
+        "repository": {
+          "name": "my-repo",
+          "id": "repo-guid-9012"
+        }
+      },
+      "createdDate": "2026-04-21T16:00:00Z"
+    }
+  ]
+}

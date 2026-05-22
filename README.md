@@ -1,110 +1,93 @@
-# GHAzDO → ADO Work Item Integration
+# GHAzDO → ADO Work Item Automation
 
-Create and manage Azure DevOps work items from GitHub Advanced Security for Azure DevOps (GHAzDO) security alerts.
+Automatically create and close Azure DevOps work items when GHAzDO security alerts appear and resolve.
 
-## Quick Start: One-Click Work Item Creation (Recommended)
+## Deploy to Azure
 
-Azure DevOps now has a **native button** to create work items directly from security alerts — no Logic App needed.
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsautalwar%2Fghas-ado-logic-app%2Fmain%2Finfra%2Fdeploy-full-automation.bicep)
 
-1. Go to your ADO project → **Repos** → **Advanced Security**
-2. Open any security alert (code scanning, dependency, or secret scanning)
-3. In the alert details, find the **"Related Work"** section
-4. Click **"Add"** → Create a new work item or link to an existing one
+## How It Works
 
-**That's it.** The alert and work item are bidirectionally linked. No infrastructure, no webhooks, no maintenance.
+**Zero manual intervention.** Three simple steps:
 
-> 📖 See [docs/quickstart-work-item-from-alert.md](docs/quickstart-work-item-from-alert.md) for the full guide.
-
-## Architecture
+1. **GHAzDO detects vulnerability** → ADO Service Hook fires → **Logic App creates work item**
+2. **Vulnerability fixed** → Service Hook fires → **Logic App closes work item**
+3. **Done** — No manual updates needed
 
 ```mermaid
 flowchart LR
-    subgraph "Manual (Native ADO)"
-        A["🔍 Security Alert"] -->|"Click 'Add'"| B["📋 Work Item Created"]
-        B -->|"Click link"| A
-    end
-
-    subgraph "Automatic (Optional Logic App)"
-        C["✅ Alert Fixed/Resolved"] -->|"Service Hook"| D["⚙️ Auto-Close Logic App"]
-        D -->|"ADO REST API"| E["📋 Work Item → Done"]
-    end
+    A["🔍 GHAzDO Alert Created"] -->|"Service Hook"| B["⚙️ Logic App"]
+    B -->|"ADO REST API"| C["📋 Work Item Created"]
+    D["✅ Alert Fixed/Resolved"] -->|"Service Hook"| B
+    B -->|"ADO REST API"| E["📋 Work Item → Done"]
 ```
 
-| Capability | How It Works | Setup Required |
-|---|---|---|
-| **Create work item from alert** | Native ADO button (click "Add") | None — built into ADO |
-| **Auto-close on fix/resolve** | Optional Logic App (see below) | One-click deploy |
+## 5-Minute Setup
 
-## Optional: Auto-Close Logic App
+1. **Click Deploy to Azure button** (above)
+2. **Fill in 3 fields:** ADO organization, project name, and Personal Access Token (PAT)
+3. **Copy trigger URL** from deployment outputs
+4. **Configure 2 ADO Service Hooks** (see [docs/ado-service-hook-setup.md](docs/ado-service-hook-setup.md))
+5. **Done** — Alerts and work items sync automatically
 
-If you want work items to **automatically close** when vulnerabilities are fixed, deploy the lightweight auto-close Logic App. It only handles closing — no work item creation logic.
+## What Gets Deployed
 
-### Prerequisites
+- **1 Azure Logic App** (~$50–100/month)
+- **Handles:** Secret scanning, dependency scanning, and code scanning alerts
+- **Auto-creates work items** with severity-based priority
+- **Auto-closes work items** when vulnerabilities are fixed
+- **Tag-based deduplication** — prevents duplicate work items for the same alert
 
-- **Azure subscription** with permissions to create Logic Apps
-- **Azure DevOps** PAT with `Work Items (Read & Write)` scope
-- **GHAzDO** enabled on your ADO repository
+## Prerequisites
 
-### Deploy
+- Azure subscription (free tier eligible)
+- Azure DevOps PAT with `Work Items: Read & Write` scope
+- GHAzDO enabled on your ADO repository
 
-```powershell
-# One-command deploy
-az deployment group create \
-  --resource-group "rg-ghazdo-autoclose" \
-  --template-file infra/deploy-autoclose.bicep \
-  --parameters adoOrganization="YOUR_ORG" adoProject="YOUR_PROJECT" adoPat="YOUR_PAT"
-```
+## Supplementary: Native ADO Button
 
-After deployment, configure an **ADO Service Hook** to send alert state-change events to the Logic App's trigger URL (shown in deployment output).
+Azure DevOps also provides a built-in **"Related Work"** button for manual one-off work item creation from alerts. Perfect for quick links or bulk operations.
 
-### How It Works
-
-1. GHAzDO marks a vulnerability as `fixed` or `resolved`
-2. ADO Service Hook sends the event to the Logic App
-3. Logic App queries ADO for open work items with the matching tag
-4. Transitions the work item to **Done** with a history comment
-
-> **Note:** The auto-close workflow uses the tag format `GHAzDO-{repoName}-{alertId}` to find matching work items. If your ADO process template uses "Closed" instead of "Done", update the `System.State` value in `infra/workflows/ghazdo-autoclose-only.json`.
+See [docs/quickstart-work-item-from-alert.md](docs/quickstart-work-item-from-alert.md) for the one-page guide.
 
 ## File Structure
 
 ```
 ├── README.md                                  # This file
 ├── docs/
-│   ├── quickstart-work-item-from-alert.md     # One-page native ADO guide
-│   ├── customer-response-native-feature.md    # Customer communication template
-│   └── setup-guide.md                         # Detailed setup guide
+│   ├── ado-service-hook-setup.md              # Configure ADO Service Hooks
+│   ├── quickstart-work-item-from-alert.md     # Native ADO "Related Work" guide
+│   ├── setup-guide.md                         # Full deployment guide
+│   └── customer-response-native-feature.md    # Customer communication template
 ├── infra/
-│   ├── deploy-autoclose.bicep                 # Standalone auto-close deployment
-│   ├── main.bicep                             # Full deployment (all Logic Apps)
+│   ├── deploy-full-automation.bicep           # Full automation deployment
+│   ├── deploy-autoclose.bicep                 # Auto-close only (legacy)
+│   ├── main.bicep                             # All Logic Apps (legacy)
 │   ├── parameters.json                        # Deployment parameters
 │   ├── modules/
+│   │   ├── logic-app.bicep                    # Full GHAzDO → ADO module
 │   │   ├── autoclose-logic-app.bicep          # Auto-close Logic App module
-│   │   ├── logic-app.bicep                    # Full GHAS sync Logic App module
-│   │   └── secret-scan-logic-app.bicep        # Secret scan Logic App module
+│   │   └── secret-scan-logic-app.bicep        # Secret scan module
 │   └── workflows/
-│       ├── ghazdo-autoclose-only.json         # Auto-close only workflow (recommended)
-│       ├── ghas-to-ado.json                   # Full GHAS → ADO workflow
 │       ├── ghazdo-to-ado.json                 # Full GHAzDO → ADO workflow
+│       ├── ghas-to-ado.json                   # Full GHAS → ADO workflow
+│       ├── ghazdo-autoclose-only.json         # Auto-close only workflow
 │       └── secret-scan-to-ado.json            # Secret scan workflow
 ├── scripts/
 │   ├── deploy.ps1                             # Azure deployment script
 │   └── setup-webhooks.ps1                     # Webhook configuration
-└── docs/archive/                              # Legacy guides and walkthroughs
+└── docs/archive/                              # Archived guides
 ```
-
-## Full Automation (Legacy)
-
-The original Logic App workflows (`ghas-to-ado.json`, `ghazdo-to-ado.json`) provide full automation — auto-creating AND auto-closing work items via webhooks. These remain available for teams that prefer fully unattended operation. See [docs/setup-guide.md](docs/setup-guide.md) for the full deployment guide.
 
 ## Troubleshooting
 
 | Issue | Resolution |
 |---|---|
-| "Add" button not visible in alerts | Ensure GHAzDO is enabled on the repository |
-| Auto-close not triggering | Verify ADO Service Hook is configured and pointing to the Logic App trigger URL |
-| Work item not closing | Check that work item has the matching `GHAzDO-{repo}-{alertId}` tag |
-| "Forbidden" from ADO API | Ensure the ADO PAT has "Work Items: Read & Write" scope |
+| Logic App not triggering | Verify ADO Service Hook is configured with the correct trigger URL |
+| Work item not created | Check that alert is in a `created` or `appeared` state |
+| Work item not closing | Ensure work item has the matching `GHAzDO-{repo}-{alertId}` tag |
+| "Forbidden" from ADO API | Verify ADO PAT has `Work Items: Read & Write` scope and has not expired |
+| Native "Add" button not visible | Ensure GHAzDO is enabled on the repository |
 
 ## References
 

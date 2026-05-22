@@ -5,7 +5,8 @@
     "adoOrganization": { "type": "String" },
     "adoProject": { "type": "String" },
     "adoPat": { "type": "SecureString" },
-    "workItemType": { "type": "String", "defaultValue": "Issue" }
+    "workItemType": { "type": "String", "defaultValue": "Issue" },
+    "closedState": { "type": "String", "defaultValue": "Done" }
   },
   "triggers": {
     "When_a_GHAzDO_alert_is_received": {
@@ -126,6 +127,11 @@
             },
             "body": {
               "query": "SELECT [System.Id] FROM WorkItems WHERE [System.Tags] CONTAINS '@{outputs('Compose_GhasTag')}' AND [System.State] <> 'Removed'"
+            },
+            "retryPolicy": {
+              "type": "exponential",
+              "count": 3,
+              "interval": "PT10S"
             }
           },
           "runAfter": {}
@@ -155,7 +161,12 @@
                   { "op": "add", "path": "/fields/System.Description", "value": "@{outputs('Compose_Description')}" },
                   { "op": "add", "path": "/fields/System.Tags", "value": "@{outputs('Compose_Tags')}" },
                   { "op": "add", "path": "/fields/Microsoft.VSTS.Common.Priority", "value": "@if(or(equals(outputs('Compose_Severity'),'critical'),equals(outputs('Compose_Severity'),'high')), 1, if(equals(outputs('Compose_Severity'),'medium'), 2, 3))" }
-                ]
+                ],
+                "retryPolicy": {
+                  "type": "exponential",
+                  "count": 3,
+                  "interval": "PT10S"
+                }
               },
               "runAfter": {}
             }
@@ -175,7 +186,12 @@
                 "Authorization": "Basic @{base64(concat(':', parameters('adoPat')))}"
               },
               "body": {
-                "query": "SELECT [System.Id] FROM WorkItems WHERE [System.Tags] CONTAINS '@{outputs('Compose_GhasTag')}' AND [System.State] <> 'Done' AND [System.State] <> 'Removed'"
+                "query": "SELECT [System.Id] FROM WorkItems WHERE [System.Tags] CONTAINS '@{outputs('Compose_GhasTag')}' AND [System.State] <> '@{parameters('closedState')}' AND [System.State] <> 'Removed'"
+              },
+              "retryPolicy": {
+                "type": "exponential",
+                "count": 3,
+                "interval": "PT10S"
               }
             },
             "runAfter": {}
@@ -201,9 +217,14 @@
                     "Authorization": "Basic @{base64(concat(':', parameters('adoPat')))}"
                   },
                   "body": [
-                    { "op": "add", "path": "/fields/System.State", "value": "Done" },
+                    { "op": "add", "path": "/fields/System.State", "value": "@{parameters('closedState')}" },
                     { "op": "add", "path": "/fields/System.History", "value": "Auto-closed: GHAzDO alert resolved/fixed." }
-                  ]
+                  ],
+                  "retryPolicy": {
+                    "type": "exponential",
+                    "count": 3,
+                    "interval": "PT10S"
+                  }
                 },
                 "runAfter": {}
               }

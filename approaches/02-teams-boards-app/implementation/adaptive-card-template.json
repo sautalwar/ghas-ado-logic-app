@@ -1,0 +1,181 @@
+{
+  "_comment": "Adaptive Card template for GHAzDO alert notifications in Microsoft Teams. Use this with an incoming webhook or Teams Workflow to format rich alert notifications. The card includes severity color-coding, alert details, and action buttons.",
+
+  "type": "message",
+  "attachments": [
+    {
+      "contentType": "application/vnd.microsoft.card.adaptive",
+      "contentUrl": null,
+      "content": {
+        "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+        "type": "AdaptiveCard",
+        "version": "1.4",
+        "msteams": {
+          "width": "Full"
+        },
+        "body": [
+          {
+            "type": "ColumnSet",
+            "columns": [
+              {
+                "type": "Column",
+                "width": "auto",
+                "items": [
+                  {
+                    "type": "Image",
+                    "url": "https://cdn.vsassets.io/content/notifications/advancedsecurity-shield.png",
+                    "size": "Small",
+                    "altText": "Security Alert"
+                  }
+                ]
+              },
+              {
+                "type": "Column",
+                "width": "stretch",
+                "items": [
+                  {
+                    "type": "TextBlock",
+                    "text": "🔒 GHAzDO Security Alert",
+                    "weight": "Bolder",
+                    "size": "Medium",
+                    "wrap": true
+                  },
+                  {
+                    "type": "TextBlock",
+                    "text": "${eventDescription}",
+                    "spacing": "None",
+                    "isSubtle": true,
+                    "wrap": true
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Container",
+            "style": "${if(severity == 'critical', 'attention', if(severity == 'high', 'warning', if(severity == 'medium', 'accent', 'default')))}",
+            "bleed": true,
+            "items": [
+              {
+                "type": "TextBlock",
+                "text": "${toUpper(severity)} SEVERITY",
+                "weight": "Bolder",
+                "color": "${if(severity == 'critical', 'Attention', if(severity == 'high', 'Warning', 'Default'))}",
+                "horizontalAlignment": "Center"
+              }
+            ]
+          },
+          {
+            "type": "FactSet",
+            "facts": [
+              {
+                "title": "Alert ID",
+                "value": "#${alertId}"
+              },
+              {
+                "title": "Title",
+                "value": "${alertTitle}"
+              },
+              {
+                "title": "Type",
+                "value": "${alertTypeIcon} ${alertType}"
+              },
+              {
+                "title": "Severity",
+                "value": "${severityIcon} ${severity}"
+              },
+              {
+                "title": "Repository",
+                "value": "${repositoryName}"
+              },
+              {
+                "title": "File",
+                "value": "${filePath}"
+              },
+              {
+                "title": "State",
+                "value": "${alertState}"
+              },
+              {
+                "title": "Detected",
+                "value": "${detectedDate}"
+              }
+            ]
+          },
+          {
+            "type": "TextBlock",
+            "text": "**Description:** ${alertDescription}",
+            "wrap": true,
+            "spacing": "Medium",
+            "isVisible": "${alertDescription != ''}"
+          }
+        ],
+        "actions": [
+          {
+            "type": "Action.OpenUrl",
+            "title": "🔍 View Alert in ADO",
+            "url": "${alertUrl}",
+            "style": "positive"
+          },
+          {
+            "type": "Action.OpenUrl",
+            "title": "📋 View Repository",
+            "url": "${repositoryUrl}"
+          },
+          {
+            "type": "Action.Submit",
+            "title": "✅ Create Work Item",
+            "data": {
+              "msteams": {
+                "type": "task/fetch"
+              },
+              "action": "createWorkItem",
+              "alertId": "${alertId}",
+              "alertTitle": "${alertTitle}",
+              "alertType": "${alertType}",
+              "severity": "${severity}",
+              "repositoryName": "${repositoryName}"
+            }
+          }
+        ]
+      }
+    }
+  ],
+
+  "_variableMapping": {
+    "eventDescription": "e.g., 'A new secret scanning alert was created' or 'Alert state changed from active to fixed'",
+    "severity": "From payload: resource.severity (critical | high | medium | low)",
+    "alertId": "From payload: resource.alertId",
+    "alertTitle": "From payload: resource.title",
+    "alertType": "From payload: resource.alertType (secret | dependency | code)",
+    "alertTypeIcon": "Mapped: secret=🔑, dependency=📦, code=🔍",
+    "severityIcon": "Mapped: critical=🔴, high=🟠, medium=🟡, low=🟢",
+    "repositoryName": "From payload: resource.repository.name",
+    "filePath": "From payload: resource.location or 'N/A'",
+    "alertState": "From payload: resource.state (active | fixed | dismissed)",
+    "detectedDate": "From payload: resource.firstSeenDate (formatted)",
+    "alertDescription": "From payload: resource.description or detailedMessage.text",
+    "alertUrl": "From payload: resource.link",
+    "repositoryUrl": "Constructed: https://dev.azure.com/{org}/{project}/_git/{repo}"
+  },
+
+  "_stateChangeVariant": {
+    "_comment": "For state change events, add these additional facts to the FactSet",
+    "additionalFacts": [
+      {
+        "title": "Previous State",
+        "value": "${previousState}"
+      },
+      {
+        "title": "New State",
+        "value": "${newState}"
+      },
+      {
+        "title": "Changed Date",
+        "value": "${stateChangedDate}"
+      }
+    ],
+    "headerText": "🔄 GHAzDO Alert State Changed",
+    "stateChangeDescription": "Alert #${alertId} changed from ${previousState} to ${newState}"
+  }
+}

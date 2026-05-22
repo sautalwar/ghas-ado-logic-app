@@ -1,33 +1,37 @@
-# Subject: Great News — Native Work Item Creation from Security Alerts Now Available
+# Subject: Full Automation for GHAzDO Security Alerts — One-Click Deploy, Zero Maintenance
 
 ---
 
 Hi [Customer Contact],
 
-Thank you for that honest feedback about Logic Apps. You were absolutely right—adding middleware complexity just to create work items felt like the wrong approach. I'm excited to share that ADO has now shipped exactly what you asked for: a native **"Add" button** directly in the Advanced Security alerts interface.
+I heard you loud and clear — you want **full automation**, not manual clicking. When a security alert fires, a work item should appear automatically. When the vulnerability is fixed, the work item should close itself. No human in the loop.
 
-## The Solution
+We built exactly that, and we've made deployment as simple as possible.
 
-When you open any GitHub Advanced Security alert in Azure DevOps, you'll see a new **"Related Work" section** with an **"Add"** button. One click creates a new work item pre-populated with the alert details (severity, description, remediation guidance), and the link flows both directions—the alert links to the work item, the work item links back to the alert. No external systems, no middleware, no setup required.
+## How It Works
 
-## What This Means for Your Workflow
+**Step 1 — Deploy (3 minutes)**
+Click the **"Deploy to Azure"** button in our repo → fill in 3 fields (subscription, resource group, ADO PAT) → click Create. That's it. Azure provisions a fully configured Logic App that handles both work item creation and auto-close.
 
-✓ No Logic App infrastructure for work item creation  
-✓ No ongoing maintenance or monitoring  
-✓ One-click work item creation from any alert  
-✓ Alerts and work items stay in sync through native linking  
+**Step 2 — Connect ADO (2 minutes)**
+Configure two service hooks in your ADO project settings so alerts flow to the Logic App automatically. This is the one manual step — we have a [step-by-step guide](ado-service-hook-setup.md) that takes about 2 minutes.
 
-## What About Auto-Close?
+After that, everything is hands-off:
 
-The one piece Logic Apps *was* useful for is auto-closing work items when vulnerabilities are remediated. If that workflow is valuable to your team, we can deploy a **tiny, optional Logic App** (literally one action) that watches for resolved alerts and closes the linked work item. It's a one-click deploy and completely optional—your team can decide if it's worth it.
+✓ **Alert fires** → work item created automatically with full details (severity, description, remediation)  
+✓ **Alert resolved** → linked work item closed automatically  
+✓ **Zero ongoing maintenance** — Microsoft-managed Logic App, no servers to patch  
+✓ **Cost** → ~$50–100/month depending on alert volume  
+
+## Bonus: Native ADO Button
+
+ADO also shipped a native **"Add" button** in the Advanced Security alerts UI for ad-hoc, manual work item linking. This is a great complement — your developers can use it to manually link alerts that need special attention, while the Logic App handles the bulk automation in the background.
 
 ## Next Steps
 
-1. **Try it now**: Go to Advanced Security → open an alert → look for the "Related Work" section
-2. **We'll send**: A quick-start guide with screenshots and a 5-minute walkthrough
-3. **Optional call**: If you'd like to see it in action or discuss the optional auto-close Logic App, I'm happy to hop on a brief call
+I'd love to walk you through the setup live — it genuinely takes under 5 minutes end to end. **Can we schedule a 15-minute call this week?** I'll deploy it in your environment and we'll have it running before the call ends.
 
-This is much closer to what you were looking for. Looking forward to your feedback.
+Looking forward to it.
 
 Best,  
 Saurabh  

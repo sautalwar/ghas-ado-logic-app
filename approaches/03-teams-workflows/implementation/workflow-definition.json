@@ -1,0 +1,279 @@
+{
+  "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "name": "GHAzDO Alert → ADO Work Item (Teams Workflow)",
+    "description": "Teams Workflow that receives GHAzDO security alert webhooks from ADO Service Hooks and creates work items in Azure DevOps. Uses Standard connectors only — no Premium license required for work item creation.",
+    "approach": "03-teams-workflows",
+    "version": "1.0.0",
+    "exportNote": "This JSON represents the logical workflow definition. Teams Workflows are created in the Teams UI, but this serves as a reference for recreating or documenting the flow. The structure follows Power Automate cloud flow format."
+  },
+  "triggers": {
+    "When_a_Teams_webhook_request_is_received": {
+      "type": "Request",
+      "kind": "Http",
+      "description": "Receives HTTP POST from ADO Service Hook when a GHAzDO alert is created",
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "eventType": { "type": "string" },
+            "resource": {
+              "type": "object",
+              "properties": {
+                "alertType": { "type": "string" },
+                "alertId": { "type": "integer" },
+                "id": { "type": "integer" },
+                "title": { "type": "string" },
+                "severity": { "type": "string" },
+                "state": { "type": "string" },
+                "secretType": { "type": "string" },
+                "advisoryTitle": { "type": "string" },
+                "rule": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "string" },
+                    "description": { "type": "string" }
+                  }
+                },
+                "location": {
+                  "type": "object",
+                  "properties": {
+                    "file": { "type": "string" },
+                    "path": { "type": "string" },
+                    "line": { "type": "integer" }
+                  }
+                },
+                "repository": {
+                  "type": "object",
+                  "properties": {
+                    "name": { "type": "string" },
+                    "project": {
+                      "type": "object",
+                      "properties": {
+                        "name": { "type": "string" }
+                      }
+                    }
+                  }
+                },
+                "link": { "type": "string" },
+                "previousState": { "type": "string" },
+                "newState": { "type": "string" }
+              }
+            },
+            "message": {
+              "type": "object",
+              "properties": {
+                "text": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "actions": {
+    "Parse_Webhook_Payload": {
+      "type": "ParseJson",
+      "description": "Parse the incoming GHAzDO webhook JSON payload",
+      "inputs": {
+        "content": "@triggerBody()",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "eventType": { "type": "string" },
+            "resource": {
+              "type": "object",
+              "properties": {
+                "alertType": { "type": "string" },
+                "alertId": { "type": "integer" },
+                "id": { "type": "integer" },
+                "title": { "type": "string" },
+                "severity": { "type": "string" },
+                "state": { "type": "string" },
+                "secretType": { "type": "string" },
+                "advisoryTitle": { "type": "string" },
+                "rule": {
+                  "type": "object",
+                  "properties": {
+                    "description": { "type": "string" }
+                  }
+                },
+                "location": {
+                  "type": "object",
+                  "properties": {
+                    "file": { "type": "string" },
+                    "line": { "type": "integer" }
+                  }
+                },
+                "repository": {
+                  "type": "object",
+                  "properties": {
+                    "name": { "type": "string" }
+                  }
+                },
+                "link": { "type": "string" }
+              }
+            },
+            "message": {
+              "type": "object",
+              "properties": {
+                "text": { "type": "string" }
+              }
+            }
+          }
+        }
+      },
+      "runAfter": {}
+    },
+    "Compose_AlertType": {
+      "type": "Compose",
+      "description": "Extract the alert type (secret, code, dependency)",
+      "inputs": "@coalesce(body('Parse_Webhook_Payload')?['resource']?['alertType'], 'unknown')",
+      "runAfter": {
+        "Parse_Webhook_Payload": ["Succeeded"]
+      }
+    },
+    "Compose_AlertId": {
+      "type": "Compose",
+      "description": "Extract the alert ID for tracking",
+      "inputs": "@coalesce(body('Parse_Webhook_Payload')?['resource']?['alertId'], body('Parse_Webhook_Payload')?['resource']?['id'], 0)",
+      "runAfter": {
+        "Parse_Webhook_Payload": ["Succeeded"]
+      }
+    },
+    "Compose_RepoName": {
+      "type": "Compose",
+      "description": "Extract repository name",
+      "inputs": "@coalesce(body('Parse_Webhook_Payload')?['resource']?['repository']?['name'], 'unknown-repo')",
+      "runAfter": {
+        "Parse_Webhook_Payload": ["Succeeded"]
+      }
+    },
+    "Compose_Severity": {
+      "type": "Compose",
+      "description": "Extract and normalize severity",
+      "inputs": "@toLower(coalesce(body('Parse_Webhook_Payload')?['resource']?['severity'], 'medium'))",
+      "runAfter": {
+        "Parse_Webhook_Payload": ["Succeeded"]
+      }
+    },
+    "Compose_GhasTag": {
+      "type": "Compose",
+      "description": "Build unique tracking tag: GHAzDO-{repo}-{alertId}",
+      "inputs": "@concat('GHAzDO-', outputs('Compose_RepoName'), '-', string(outputs('Compose_AlertId')))",
+      "runAfter": {
+        "Compose_AlertId": ["Succeeded"],
+        "Compose_RepoName": ["Succeeded"]
+      }
+    },
+    "Compose_Title": {
+      "type": "Compose",
+      "description": "Build work item title with alert type prefix",
+      "inputs": "@if(equals(outputs('Compose_AlertType'), 'secret'), concat('[GHAzDO-Secret] ', coalesce(body('Parse_Webhook_Payload')?['resource']?['secretType'], 'Secret detected')), if(equals(outputs('Compose_AlertType'), 'code'), concat('[GHAzDO-CodeScan] ', coalesce(body('Parse_Webhook_Payload')?['resource']?['title'], body('Parse_Webhook_Payload')?['resource']?['rule']?['description'], 'Code scanning alert')), if(equals(outputs('Compose_AlertType'), 'dependency'), concat('[GHAzDO-Dependency] ', coalesce(body('Parse_Webhook_Payload')?['resource']?['title'], body('Parse_Webhook_Payload')?['resource']?['advisoryTitle'], 'Dependency alert')), concat('[GHAzDO-Alert] ', coalesce(body('Parse_Webhook_Payload')?['resource']?['title'], body('Parse_Webhook_Payload')?['message']?['text'], 'Security alert')))))",
+      "runAfter": {
+        "Compose_AlertType": ["Succeeded"]
+      }
+    },
+    "Compose_Tags": {
+      "type": "Compose",
+      "description": "Build semicolon-separated tags for the work item",
+      "inputs": "@concat('GHAzDO;', outputs('Compose_AlertType'), ';', outputs('Compose_Severity'), ';', outputs('Compose_GhasTag'))",
+      "runAfter": {
+        "Compose_AlertType": ["Succeeded"],
+        "Compose_Severity": ["Succeeded"],
+        "Compose_GhasTag": ["Succeeded"]
+      }
+    },
+    "Compose_Description": {
+      "type": "Compose",
+      "description": "Build HTML description with alert details table",
+      "inputs": "@concat('<h3>GHAzDO Security Alert</h3>', '<table border=\"1\" cellpadding=\"5\">', '<tr><td><b>Alert Type</b></td><td>', outputs('Compose_AlertType'), '</td></tr>', '<tr><td><b>Severity</b></td><td>', outputs('Compose_Severity'), '</td></tr>', '<tr><td><b>Repository</b></td><td>', outputs('Compose_RepoName'), '</td></tr>', '<tr><td><b>File</b></td><td>', coalesce(body('Parse_Webhook_Payload')?['resource']?['location']?['file'], 'N/A'), '</td></tr>', '<tr><td><b>Line</b></td><td>', string(coalesce(body('Parse_Webhook_Payload')?['resource']?['location']?['line'], 'N/A')), '</td></tr>', '<tr><td><b>Alert ID</b></td><td>', string(outputs('Compose_AlertId')), '</td></tr>', '<tr><td><b>Tag</b></td><td>', outputs('Compose_GhasTag'), '</td></tr>', '</table>', '<p><a href=\"', coalesce(body('Parse_Webhook_Payload')?['resource']?['link'], ''), '\">View Alert in Azure DevOps</a></p>', '<hr/><p><i>Auto-created by Teams Workflow Integration</i></p>')",
+      "runAfter": {
+        "Compose_AlertType": ["Succeeded"],
+        "Compose_Severity": ["Succeeded"],
+        "Compose_RepoName": ["Succeeded"],
+        "Compose_AlertId": ["Succeeded"],
+        "Compose_GhasTag": ["Succeeded"]
+      }
+    },
+    "Condition_IsCreateEvent": {
+      "type": "If",
+      "description": "Check if this is an alert creation event (vs state change)",
+      "expression": {
+        "or": [
+          {
+            "equals": [
+              "@body('Parse_Webhook_Payload')?['eventType']",
+              "advancedsecurity.alert.created"
+            ]
+          },
+          {
+            "contains": [
+              "@string(body('Parse_Webhook_Payload')?['eventType'])",
+              "created"
+            ]
+          }
+        ]
+      },
+      "runAfter": {
+        "Compose_Title": ["Succeeded"],
+        "Compose_Tags": ["Succeeded"],
+        "Compose_Description": ["Succeeded"]
+      },
+      "actions": {
+        "Create_ADO_Work_Item": {
+          "type": "ApiConnection",
+          "description": "Create a new work item in Azure DevOps using the Standard ADO connector. Configure Organization, Project, and Work Item Type in the Teams Workflow UI.",
+          "inputs": {
+            "host": {
+              "connection": {
+                "name": "@parameters('$connections')['visualstudioteamservices']['connectionId']"
+              }
+            },
+            "method": "patch",
+            "path": "/{organization}/{project}/_apis/wit/workitems/${workItemType}",
+            "queries": {
+              "organization": "YOUR_ADO_ORG",
+              "project": "YOUR_ADO_PROJECT",
+              "workItemType": "Issue"
+            },
+            "body": {
+              "title": "@{outputs('Compose_Title')}",
+              "description": "@{outputs('Compose_Description')}",
+              "tags": "@{outputs('Compose_Tags')}",
+              "priority": "@if(or(equals(outputs('Compose_Severity'),'critical'),equals(outputs('Compose_Severity'),'high')), 1, if(equals(outputs('Compose_Severity'),'medium'), 2, 3))"
+            }
+          },
+          "runAfter": {}
+        }
+      },
+      "else": {
+        "actions": {
+          "Compose_SkipMessage": {
+            "type": "Compose",
+            "description": "Log that this was a state change event — not handled in this workflow",
+            "inputs": "State change event received. Use the auto-close workflow to handle this event type.",
+            "runAfter": {}
+          }
+        }
+      }
+    }
+  },
+  "outputs": {},
+  "connectionReferences": {
+    "visualstudioteamservices": {
+      "api": {
+        "id": "/providers/Microsoft.PowerApps/apis/shared_visualstudioteamservices"
+      },
+      "connection": {
+        "id": "CONFIGURE_IN_TEAMS_WORKFLOW_UI"
+      },
+      "connectionName": "Azure DevOps",
+      "connectionProperties": {
+        "authentication": "OAuth"
+      },
+      "_note": "The ADO connector uses OAuth sign-in. When creating the workflow in Teams, you'll be prompted to sign in to your ADO organization. No PAT required."
+    }
+  }
+}

@@ -1,0 +1,231 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "GHAzDO Webhook Payload Schema",
+  "description": "Schema for Azure DevOps Advanced Security (GHAzDO) webhook payloads sent via Service Hooks to Zapier",
+  "type": "object",
+  "required": ["eventType", "resource"],
+  "properties": {
+    "subscriptionId": {
+      "type": "string",
+      "description": "Unique ID of the ADO Service Hook subscription"
+    },
+    "notificationId": {
+      "type": "integer",
+      "description": "Sequential notification number for this subscription"
+    },
+    "eventType": {
+      "type": "string",
+      "description": "The event type that triggered this webhook",
+      "enum": [
+        "advancedsecurity.alert.created",
+        "advancedsecurity.alert.stateChanged"
+      ]
+    },
+    "resource": {
+      "type": "object",
+      "description": "The alert resource that triggered the event",
+      "required": ["alertId", "alertType", "severity", "state"],
+      "properties": {
+        "alertId": {
+          "type": "integer",
+          "description": "Unique alert identifier within the repository"
+        },
+        "id": {
+          "type": "integer",
+          "description": "Alternative alert identifier (fallback for alertId)"
+        },
+        "alertType": {
+          "type": "string",
+          "description": "Type of security alert",
+          "enum": ["secret", "code", "dependency"]
+        },
+        "title": {
+          "type": "string",
+          "description": "Human-readable alert title (code scan and dependency alerts)"
+        },
+        "secretType": {
+          "type": "string",
+          "description": "Type of secret detected (secret scanning alerts only)",
+          "examples": [
+            "Amazon AWS Access Key ID",
+            "Azure Storage Account Key",
+            "GitHub Personal Access Token"
+          ]
+        },
+        "advisoryTitle": {
+          "type": "string",
+          "description": "Advisory title (dependency alerts only)"
+        },
+        "severity": {
+          "type": "string",
+          "description": "Alert severity level",
+          "enum": ["critical", "high", "medium", "low"]
+        },
+        "state": {
+          "type": "string",
+          "description": "Current alert state",
+          "enum": ["active", "fixed", "dismissed", "inProgress"]
+        },
+        "previousState": {
+          "type": "string",
+          "description": "Previous state (stateChanged events only)",
+          "enum": ["active", "fixed", "dismissed", "inProgress"]
+        },
+        "repository": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "Repository name"
+            },
+            "id": {
+              "type": "string",
+              "description": "Repository GUID"
+            }
+          }
+        },
+        "location": {
+          "type": "object",
+          "description": "File location of the alert (if applicable)",
+          "properties": {
+            "file": {
+              "type": "string",
+              "description": "File path within the repository"
+            },
+            "path": {
+              "type": "string",
+              "description": "Alternative file path field"
+            },
+            "line": {
+              "type": "integer",
+              "description": "Line number in the file"
+            }
+          }
+        },
+        "link": {
+          "type": "string",
+          "format": "uri",
+          "description": "Direct URL to the alert in Azure DevOps"
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Alternative URL field"
+        },
+        "rule": {
+          "type": "object",
+          "description": "Code scanning rule details (code scan alerts only)",
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Rule identifier (e.g., 'CWE-79')"
+            },
+            "description": {
+              "type": "string",
+              "description": "Rule description"
+            }
+          }
+        }
+      }
+    },
+    "message": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "description": "Human-readable event message"
+        },
+        "html": {
+          "type": "string",
+          "description": "HTML-formatted event message"
+        }
+      }
+    },
+    "detailedMessage": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        },
+        "html": {
+          "type": "string"
+        }
+      }
+    },
+    "createdDate": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the event was created"
+    }
+  },
+  "examples": [
+    {
+      "_name": "Secret Scanning Alert Created",
+      "subscriptionId": "sub-001",
+      "notificationId": 1,
+      "eventType": "advancedsecurity.alert.created",
+      "resource": {
+        "alertId": 42,
+        "alertType": "secret",
+        "secretType": "Amazon AWS Access Key ID",
+        "severity": "critical",
+        "state": "active",
+        "repository": { "name": "my-app", "id": "repo-001" },
+        "location": { "file": "config/settings.py", "line": 15 },
+        "link": "https://dev.azure.com/myorg/myproject/_git/my-app/alerts/42"
+      },
+      "message": { "text": "A secret was detected in my-app" }
+    },
+    {
+      "_name": "Code Scanning Alert Created",
+      "subscriptionId": "sub-001",
+      "notificationId": 2,
+      "eventType": "advancedsecurity.alert.created",
+      "resource": {
+        "alertId": 87,
+        "alertType": "code",
+        "title": "SQL Injection vulnerability in query builder",
+        "severity": "high",
+        "state": "active",
+        "repository": { "name": "my-app", "id": "repo-001" },
+        "location": { "file": "src/db/queries.js", "line": 42 },
+        "link": "https://dev.azure.com/myorg/myproject/_git/my-app/alerts/87",
+        "rule": { "id": "CWE-89", "description": "SQL Injection" }
+      },
+      "message": { "text": "Code scanning alert found in my-app" }
+    },
+    {
+      "_name": "Dependency Alert Created",
+      "subscriptionId": "sub-001",
+      "notificationId": 3,
+      "eventType": "advancedsecurity.alert.created",
+      "resource": {
+        "alertId": 103,
+        "alertType": "dependency",
+        "title": "lodash prototype pollution",
+        "advisoryTitle": "Prototype Pollution in lodash",
+        "severity": "medium",
+        "state": "active",
+        "repository": { "name": "my-app", "id": "repo-001" },
+        "link": "https://dev.azure.com/myorg/myproject/_git/my-app/alerts/103"
+      },
+      "message": { "text": "Dependency vulnerability found in my-app" }
+    },
+    {
+      "_name": "Alert State Changed (Fixed)",
+      "subscriptionId": "sub-002",
+      "notificationId": 1,
+      "eventType": "advancedsecurity.alert.stateChanged",
+      "resource": {
+        "alertId": 42,
+        "alertType": "secret",
+        "severity": "critical",
+        "state": "fixed",
+        "previousState": "active",
+        "repository": { "name": "my-app", "id": "repo-001" },
+        "link": "https://dev.azure.com/myorg/myproject/_git/my-app/alerts/42"
+      },
+      "message": { "text": "Alert state changed from active to fixed" }
+    }
+  ]
+}

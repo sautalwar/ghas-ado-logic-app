@@ -1,0 +1,83 @@
+{
+  "_description": "ADO Service Hook configurations for Make.com webhook integration. Create TWO service hooks — one for alert created, one for state changed.",
+  
+  "service_hooks": [
+    {
+      "name": "GHAzDO Alert Created → Make.com",
+      "service": "Web Hooks",
+      "trigger": {
+        "eventType": "advancedsecurity.alert.created",
+        "description": "Fires when a new GHAzDO security alert is detected (secret, code scan, or dependency)",
+        "filters": {
+          "repository": "(any)",
+          "alertType": "(any)",
+          "_note": "Optionally filter to specific repos or alert types if needed"
+        }
+      },
+      "action": {
+        "type": "httpRequest",
+        "settings": {
+          "url": "https://hook.us1.make.com/YOUR_WEBHOOK_ID_HERE",
+          "httpHeaders": "",
+          "resourceDetailsToSend": "All",
+          "messagesToSend": "All",
+          "detailedMessagesToSend": "None"
+        }
+      },
+      "setup_steps": [
+        "1. Go to ADO → Project Settings → Service hooks",
+        "2. Click '+ Create subscription'",
+        "3. Select 'Web Hooks' from the service list",
+        "4. Trigger: 'Advanced Security alert created'",
+        "5. Filters: Leave defaults (all repos, all alert types)",
+        "6. Action URL: Paste your Make.com webhook URL",
+        "7. Resource details to send: All",
+        "8. Messages to send: All",
+        "9. Click 'Test' → verify HTTP 200 response",
+        "10. Click 'Finish'"
+      ]
+    },
+    {
+      "name": "GHAzDO Alert State Changed → Make.com",
+      "service": "Web Hooks",
+      "trigger": {
+        "eventType": "advancedsecurity.alert.stateChanged",
+        "description": "Fires when a GHAzDO alert state changes (active → fixed, dismissed, etc.)",
+        "filters": {
+          "repository": "(any)",
+          "alertState": "(any)",
+          "_note": "Optionally filter to only 'fixed' state if you only want auto-close on resolution"
+        }
+      },
+      "action": {
+        "type": "httpRequest",
+        "settings": {
+          "url": "https://hook.us1.make.com/YOUR_WEBHOOK_ID_HERE",
+          "httpHeaders": "",
+          "resourceDetailsToSend": "All",
+          "messagesToSend": "All",
+          "detailedMessagesToSend": "None"
+        }
+      },
+      "setup_steps": [
+        "1. Go to ADO → Project Settings → Service hooks",
+        "2. Click '+ Create subscription'",
+        "3. Select 'Web Hooks' from the service list",
+        "4. Trigger: 'Advanced Security alert state changed'",
+        "5. Filters: Leave defaults (all state changes)",
+        "6. Action URL: Paste the SAME Make.com webhook URL",
+        "7. Resource details to send: All",
+        "8. Messages to send: All",
+        "9. Click 'Test' → verify HTTP 200 response",
+        "10. Click 'Finish'"
+      ]
+    }
+  ],
+
+  "important_notes": [
+    "Both service hooks use the SAME Make.com webhook URL — the Router module inside Make.com handles branching by eventType",
+    "The webhook URL format is: https://hook.{region}.make.com/{unique_id}",
+    "Test BOTH hooks after creation to confirm Make.com receives the payloads",
+    "Service hooks fire immediately on alert events — no polling delay"
+  ]
+}

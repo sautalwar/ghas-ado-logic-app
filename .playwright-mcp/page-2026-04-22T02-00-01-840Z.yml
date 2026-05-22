@@ -1,0 +1,16 @@
+- generic [ref=e4]:
+  - generic [ref=e5]:
+    - generic [ref=e6]:
+      - heading "Vantiva MCP" [level=1] [ref=e7]
+      - paragraph [ref=e8]: Sign in to continue
+    - generic [ref=e9]:
+      - generic [ref=e10]:
+        - generic [ref=e11]: Username
+        - textbox "Username" [ref=e12]:
+          - /placeholder: Enter your username
+      - generic [ref=e13]:
+        - generic [ref=e14]: Password
+        - textbox "Password" [ref=e15]:
+          - /placeholder: Enter your password
+      - button "Sign in" [ref=e16]
+  - paragraph [ref=e17]: © 2025 Vantiva. Code Intelligence Portal.

@@ -1,0 +1,179 @@
+# Limitations — Approach #3: Teams Workflows
+
+## Critical Licensing Finding ⚠️
+
+### The Key Question: Can Teams Workflows Create ADO Work Items Without Premium?
+
+**Answer: YES — with important caveats.**
+
+| Capability | Connector Type | Included in M365? | Notes |
+|-----------|---------------|-------------------|-------|
+| Receive webhook (trigger) | Standard | ✅ Yes | "When a Teams webhook request is received" |
+| Parse JSON | Built-in | ✅ Yes | Data Operation — always free |
+| Compose / Variables | Built-in | ✅ Yes | Data Operations — always free |
+| **Create ADO work item** | **Standard** | **✅ Yes** | Azure DevOps connector — basic fields |
+| **Update ADO work item** | **Standard** | **✅ Yes** | Azure DevOps connector — state, title, etc. |
+| Get query results | Standard | ✅ Yes | Runs saved ADO queries |
+| **HTTP action (raw REST)** | **Premium** | **❌ No** | Required for WIQL, json-patch+json |
+| **HTTP webhook** | **Premium** | **❌ No** | Required for custom integrations |
+
+### What This Means in Practice
+
+✅ **Free (M365 license):**
+- Receive GHAzDO alerts via webhook
+- Parse alert data and extract fields
+- Create work items with title, description, tags, priority
+- Handle all 3 alert types (secret, code, dependency)
+- Update work items (if you have the work item ID)
+
+❌ **Requires Premium ($15/user/mo or $100/flow/mo):**
+- WIQL queries to find existing work items by tag (deduplication)
+- Custom HTTP requests to ADO REST API
+- Advanced json-patch+json operations
+- Any connector marked "Premium" in Power Platform
+
+---
+
+## Limitation Details
+
+### 1. No Automated Deduplication
+
+**Impact:** HIGH  
+**Description:** The Logic App approach uses WIQL queries via HTTP to check if a work item with the same tag already exists before creating a new one. Teams Workflows cannot execute WIQL queries without the Premium HTTP connector.
+
+**Workarounds:**
+- **Manual dedup:** Use the `GHAzDO-{repo}-{alertId}` tag convention. Team members can search ADO by tag before acting on a work item.
+- **Saved query approach:** Create saved ADO queries filtered by GHAzDO tags. Use "Get query results" (Standard) to check for existing items. This is coarse-grained — returns all GHAzDO items, not filtered by specific alert.
+- **Accept duplicates:** For low-volume environments (<20 alerts/month), occasional duplicates may be acceptable and can be cleaned manually.
+
+**Risk:** Moderate. ADO Service Hooks generally fire once per event, so duplicates only occur if the service hook is re-triggered or re-tested.
+
+---
+
+### 2. Auto-Close Is Complex Without Premium
+
+**Impact:** MEDIUM  
+**Description:** Auto-closing a work item requires finding it by the unique `GHAzDO-{repo}-{alertId}` tag. The ADO "Update a work item" connector requires the numeric work item ID. Finding the ID by tag requires either WIQL (Premium) or iterating through saved query results (cumbersome).
+
+**Workarounds:**
+- **Saved query + filter:** Pre-create an ADO saved query for all active GHAzDO items. Use "Get query results" → "Apply to each" → filter by tag → update matching items. Works but is slow for large result sets.
+- **Skip auto-close:** Many teams are fine with manual close. The work item has a direct link to the GHAzDO alert — team members can verify and close.
+- **Upgrade to Premium:** If auto-close is critical, the Premium license ($15/user/mo) enables HTTP connector for WIQL queries.
+- **Use Logic App for auto-close only:** Hybrid approach — Teams Workflow for creation (free), Logic App for auto-close (paid but handles the complex part).
+
+---
+
+### 3. Limited Error Handling and Retry
+
+**Impact:** MEDIUM  
+**Description:** Teams Workflows have basic error handling compared to Logic Apps. No configurable retry policies, limited exception handling, and no "Run after" configuration for failed steps.
+
+**Workarounds:**
+- **Monitor run history:** Teams Workflows show run history with success/failure status. Check periodically.
+- **Re-run failed flows:** Failed workflow runs can be manually re-submitted from the run history.
+- **ADO Service Hook retry:** ADO Service Hooks have their own retry mechanism (3 retries with exponential backoff), which covers transient webhook delivery failures.
+
+---
+
+### 4. No Version Control / Infrastructure-as-Code
+
+**Impact:** LOW-MEDIUM  
+**Description:** Teams Workflows are stored in the Microsoft cloud, not in a Git repository. There's no native export-to-Git workflow. The `workflow-definition.json` in this repository is a reference document, not a deployable artifact.
+
+**Workarounds:**
+- **Keep reference JSON:** The `workflow-definition.json` documents the workflow structure for recreation.
+- **Screenshot documentation:** Document the workflow steps with screenshots for team knowledge transfer.
+- **Solution export:** Power Automate solutions can be exported as zip packages (requires Power Platform admin access).
+
+---
+
+### 5. Webhook URL Security
+
+**Impact:** MEDIUM  
+**Description:** The webhook URL generated by Teams Workflows is a secret. Anyone with the URL can trigger the workflow by sending an HTTP POST. There's no built-in authentication mechanism (no shared secret validation, no IP filtering).
+
+**Workarounds:**
+- **Limit URL distribution:** Only share with ADO administrators configuring service hooks.
+- **Rotate URL:** Delete and recreate the workflow to generate a new URL if compromised.
+- **Add validation step:** Add a Condition step to check for expected fields (eventType, resource.alertType) to reject malformed/unauthorized payloads.
+- **Monitor run history:** Unexpected workflow runs indicate potential URL exposure.
+
+---
+
+### 6. Expression Editor Limitations
+
+**Impact:** LOW  
+**Description:** The Teams Workflow expression editor is more basic than the full Power Automate designer. Complex nested expressions (like the title builder) can be difficult to enter and debug in the simplified UI.
+
+**Workarounds:**
+- **Build incrementally:** Add Compose steps one at a time and test each before adding the next.
+- **Use multiple Compose steps:** Break complex expressions into smaller steps rather than one giant expression.
+- **Test with simple payloads:** Use the PowerShell test commands from the README to verify each step.
+
+---
+
+### 7. Rate Limits and Throttling
+
+**Impact:** LOW  
+**Description:** Teams Workflows are subject to Power Platform throttle limits based on M365 license tier. For standard M365 licenses, this is typically 6,000 API calls per 24 hours per user.
+
+**Practical impact:** A typical GHAzDO deployment generates <100 alerts per day. The rate limit is unlikely to be hit unless there's a mass alert event (e.g., scanning a large legacy codebase for the first time).
+
+**Workarounds:**
+- **Batch initial scan:** If enabling GHAzDO on a large codebase, temporarily disable the service hook during the initial scan, then enable after the backlog is cleared.
+- **Monitor throttling:** Throttled requests return HTTP 429. Check workflow run history for these errors.
+
+---
+
+### 8. ADO Connector Field Limitations
+
+**Impact:** LOW  
+**Description:** The Standard ADO connector's "Create a work item" action supports common fields (Title, Description, Tags, Priority, Area Path, Iteration Path, Assigned To) but may not support all custom fields. For custom fields, the Premium HTTP connector with json-patch+json is required.
+
+**Workarounds:**
+- **Use standard fields:** The standard fields cover the needs of this integration.
+- **Custom field mapping:** If custom fields are required, consider the Logic App approach or Premium upgrade.
+
+---
+
+## Comparison: Teams Workflows vs. Logic App
+
+| Capability | Teams Workflows (Standard) | Logic App |
+|-----------|---------------------------|-----------|
+| Receive webhooks | ✅ | ✅ |
+| Parse JSON | ✅ | ✅ |
+| Create work items | ✅ | ✅ |
+| Set title/tags/priority | ✅ | ✅ |
+| All 3 alert types | ✅ | ✅ |
+| **Deduplication (WIQL)** | ❌ (Premium required) | ✅ |
+| **Auto-close** | ⚠️ Limited | ✅ |
+| **Retry policies** | ❌ Basic only | ✅ Configurable |
+| **Managed Identity** | ❌ | ✅ |
+| **Version control** | ❌ | ✅ (ARM/Bicep) |
+| **One-click deploy** | ❌ Manual setup | ✅ Deploy button |
+| **Cost** | **Free (M365)** | $50–100/mo |
+| **Setup time** | ~30 min | ~5 min (with deploy button) |
+| **Infrastructure** | None (runs in Teams) | Azure Logic App resource |
+
+---
+
+## Recommendation
+
+**Teams Workflows is the right choice when:**
+- Zero infrastructure cost is the top priority
+- Team already uses Microsoft Teams daily
+- Manual dedup/close is acceptable
+- Alert volume is moderate (<100/day)
+- No enterprise compliance requirements for the integration
+
+**Upgrade to Logic App when:**
+- Automated deduplication is required
+- Full auto-close lifecycle is critical
+- Enterprise audit trail is needed
+- Team needs infrastructure-as-code
+- Volume exceeds Teams Workflow limits
+
+**Hybrid approach (best of both):**
+- Teams Workflow for work item creation (free, fast)
+- Logic App for auto-close only (handles WIQL complexity)
+- This gives you free creation + reliable lifecycle management

@@ -1,0 +1,152 @@
+{
+  "_comment": "ADO Service Hook configurations for GHAzDO → Teams notifications. Create two service hooks (one per event type) via Project Settings → Service Hooks.",
+
+  "serviceHooks": [
+    {
+      "name": "GHAzDO Alert Created → Teams",
+      "description": "Sends a Teams notification when a new Advanced Security alert is detected.",
+      "publisherId": "tfs",
+      "eventType": "ms.vss-code.advancedsecurity-alert-created-event",
+      "publisherInputs": {
+        "projectId": "{YOUR_PROJECT_ID}",
+        "repository": "",
+        "alertType": "",
+        "alertSeverity": ""
+      },
+      "consumerId": "webHooks",
+      "consumerActionId": "httpRequest",
+      "consumerInputs": {
+        "url": "{YOUR_TEAMS_INCOMING_WEBHOOK_URL}",
+        "httpHeaders": "Content-Type: application/json",
+        "resourceDetailsToSend": "all",
+        "messagesToSend": "all",
+        "detailedMessagesToSend": "all"
+      }
+    },
+    {
+      "name": "GHAzDO Alert State Changed → Teams",
+      "description": "Sends a Teams notification when an Advanced Security alert state changes (fixed, dismissed, reopened).",
+      "publisherId": "tfs",
+      "eventType": "ms.vss-code.advancedsecurity-alert-statechanged-event",
+      "publisherInputs": {
+        "projectId": "{YOUR_PROJECT_ID}",
+        "repository": "",
+        "alertType": "",
+        "alertSeverity": "",
+        "newState": "",
+        "previousState": ""
+      },
+      "consumerId": "webHooks",
+      "consumerActionId": "httpRequest",
+      "consumerInputs": {
+        "url": "{YOUR_TEAMS_INCOMING_WEBHOOK_URL}",
+        "httpHeaders": "Content-Type: application/json",
+        "resourceDetailsToSend": "all",
+        "messagesToSend": "all",
+        "detailedMessagesToSend": "all"
+      }
+    }
+  ],
+
+  "samplePayload_alertCreated": {
+    "subscriptionId": "00000000-0000-0000-0000-000000000000",
+    "notificationId": 1,
+    "id": "00000000-0000-0000-0000-000000000001",
+    "eventType": "ms.vss-code.advancedsecurity-alert-created-event",
+    "publisherId": "tfs",
+    "message": {
+      "text": "A new Advanced Security alert has been created.",
+      "html": "A new <b>Advanced Security</b> alert has been created.",
+      "markdown": "A new **Advanced Security** alert has been created."
+    },
+    "detailedMessage": {
+      "text": "Advanced Security alert #42: Secret detected in src/config/db.js (critical severity) in repository my-project-repo.",
+      "html": "Advanced Security alert <b>#42</b>: Secret detected in <code>src/config/db.js</code> (critical severity) in repository <b>my-project-repo</b>.",
+      "markdown": "Advanced Security alert **#42**: Secret detected in `src/config/db.js` (critical severity) in repository **my-project-repo**."
+    },
+    "resource": {
+      "alertId": 42,
+      "alertType": "secret",
+      "severity": "critical",
+      "state": "active",
+      "title": "Secret detected in code",
+      "repository": {
+        "id": "00000000-0000-0000-0000-000000000002",
+        "name": "my-project-repo"
+      },
+      "introducedDate": "2026-04-21T10:30:00Z",
+      "firstSeenDate": "2026-04-21T10:30:00Z",
+      "link": "https://dev.azure.com/{org}/{project}/_git/{repo}/alerts/42",
+      "url": "https://dev.azure.com/{org}/{project}/_apis/alert/repositories/{repoId}/alerts/42"
+    },
+    "resourceVersion": "1.0",
+    "resourceContainers": {
+      "collection": {
+        "id": "00000000-0000-0000-0000-000000000003"
+      },
+      "account": {
+        "id": "00000000-0000-0000-0000-000000000004"
+      },
+      "project": {
+        "id": "00000000-0000-0000-0000-000000000005"
+      }
+    },
+    "createdDate": "2026-04-21T10:30:05Z"
+  },
+
+  "samplePayload_alertStateChanged": {
+    "subscriptionId": "00000000-0000-0000-0000-000000000000",
+    "notificationId": 2,
+    "id": "00000000-0000-0000-0000-000000000006",
+    "eventType": "ms.vss-code.advancedsecurity-alert-statechanged-event",
+    "publisherId": "tfs",
+    "message": {
+      "text": "An Advanced Security alert state has changed.",
+      "html": "An <b>Advanced Security</b> alert state has changed.",
+      "markdown": "An **Advanced Security** alert state has changed."
+    },
+    "detailedMessage": {
+      "text": "Advanced Security alert #42 state changed from 'active' to 'fixed' in repository my-project-repo.",
+      "html": "Advanced Security alert <b>#42</b> state changed from <code>active</code> to <code>fixed</code> in repository <b>my-project-repo</b>.",
+      "markdown": "Advanced Security alert **#42** state changed from `active` to `fixed` in repository **my-project-repo**."
+    },
+    "resource": {
+      "alertId": 42,
+      "alertType": "secret",
+      "severity": "critical",
+      "previousState": "active",
+      "state": "fixed",
+      "title": "Secret detected in code",
+      "repository": {
+        "id": "00000000-0000-0000-0000-000000000002",
+        "name": "my-project-repo"
+      },
+      "fixedDate": "2026-04-21T14:15:00Z",
+      "link": "https://dev.azure.com/{org}/{project}/_git/{repo}/alerts/42",
+      "url": "https://dev.azure.com/{org}/{project}/_apis/alert/repositories/{repoId}/alerts/42"
+    },
+    "resourceVersion": "1.0",
+    "resourceContainers": {
+      "collection": {
+        "id": "00000000-0000-0000-0000-000000000003"
+      },
+      "account": {
+        "id": "00000000-0000-0000-0000-000000000004"
+      },
+      "project": {
+        "id": "00000000-0000-0000-0000-000000000005"
+      }
+    },
+    "createdDate": "2026-04-21T14:15:05Z"
+  },
+
+  "setupInstructions": {
+    "step1": "Go to Azure DevOps → Project Settings → Service Hooks → + Create subscription",
+    "step2": "Select 'Web Hooks' as the service (or 'Microsoft Teams' if available)",
+    "step3": "For alert created: Choose event 'Advanced Security alert created'",
+    "step4": "For state changed: Choose event 'Advanced Security alert state changed'",
+    "step5": "Paste the Teams Incoming Webhook URL in the URL field",
+    "step6": "Click Test to verify, then Finish",
+    "note": "Replace all {PLACEHOLDER} values with your actual project details"
+  }
+}

@@ -1,0 +1,291 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "GHAzDO Service Hook Alert Payload",
+  "description": "JSON schema for GitHub Advanced Security for Azure DevOps (GHAzDO) alert events sent via ADO Service Hooks. Use this schema in the Teams Workflow 'Parse JSON' action.",
+  "type": "object",
+  "properties": {
+    "subscriptionId": {
+      "type": "string",
+      "description": "Unique ID of the ADO service hook subscription"
+    },
+    "notificationId": {
+      "type": "integer",
+      "description": "Notification sequence number"
+    },
+    "id": {
+      "type": "string",
+      "description": "Event instance ID"
+    },
+    "eventType": {
+      "type": "string",
+      "description": "Type of event: advancedsecurity.alert.created or advancedsecurity.alert.statechanged",
+      "enum": [
+        "advancedsecurity.alert.created",
+        "advancedsecurity.alert.statechanged"
+      ]
+    },
+    "publisherId": {
+      "type": "string",
+      "description": "Publisher ID, typically 'advancedsecurity'"
+    },
+    "message": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "description": "Human-readable event description"
+        },
+        "html": {
+          "type": "string",
+          "description": "HTML-formatted event description"
+        },
+        "markdown": {
+          "type": "string",
+          "description": "Markdown-formatted event description"
+        }
+      }
+    },
+    "detailedMessage": {
+      "type": "object",
+      "properties": {
+        "text": { "type": "string" },
+        "html": { "type": "string" },
+        "markdown": { "type": "string" }
+      }
+    },
+    "resource": {
+      "type": "object",
+      "description": "The alert resource containing all alert details",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "Alert ID (numeric)"
+        },
+        "alertId": {
+          "type": "integer",
+          "description": "Alert ID (same as id in most payloads)"
+        },
+        "alertType": {
+          "type": "string",
+          "description": "Type of security alert",
+          "enum": ["secret", "code", "dependency"]
+        },
+        "title": {
+          "type": "string",
+          "description": "Alert title (code scanning and dependency alerts)"
+        },
+        "severity": {
+          "type": "string",
+          "description": "Alert severity level",
+          "enum": ["critical", "high", "medium", "low", "note"]
+        },
+        "state": {
+          "type": "string",
+          "description": "Current alert state",
+          "enum": ["active", "fixed", "dismissed"]
+        },
+        "secretType": {
+          "type": "string",
+          "description": "Type of secret detected (secret scanning alerts only)"
+        },
+        "advisoryTitle": {
+          "type": "string",
+          "description": "Advisory title (dependency alerts only)"
+        },
+        "rule": {
+          "type": "object",
+          "description": "Code scanning rule details",
+          "properties": {
+            "id": { "type": "string" },
+            "description": { "type": "string" },
+            "helpUri": { "type": "string" }
+          }
+        },
+        "location": {
+          "type": "object",
+          "description": "File location of the alert",
+          "properties": {
+            "file": { "type": "string" },
+            "path": { "type": "string" },
+            "line": { "type": "integer" },
+            "startLine": { "type": "integer" },
+            "endLine": { "type": "integer" }
+          }
+        },
+        "repository": {
+          "type": "object",
+          "description": "Repository where the alert was detected",
+          "properties": {
+            "id": { "type": "string" },
+            "name": { "type": "string" },
+            "url": { "type": "string" },
+            "project": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "string" },
+                "name": { "type": "string" }
+              }
+            }
+          }
+        },
+        "link": {
+          "type": "string",
+          "description": "Direct URL to the alert in Azure DevOps"
+        },
+        "url": {
+          "type": "string",
+          "description": "API URL for the alert resource"
+        },
+        "previousState": {
+          "type": "string",
+          "description": "Previous state (state change events only)",
+          "enum": ["active", "fixed", "dismissed"]
+        },
+        "newState": {
+          "type": "string",
+          "description": "New state (state change events only)",
+          "enum": ["active", "fixed", "dismissed"]
+        }
+      }
+    },
+    "resourceVersion": {
+      "type": "string",
+      "description": "API version of the resource"
+    },
+    "resourceContainers": {
+      "type": "object",
+      "description": "Containers for collection, project, and account context",
+      "properties": {
+        "collection": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string" },
+            "baseUrl": { "type": "string" }
+          }
+        },
+        "account": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string" },
+            "baseUrl": { "type": "string" }
+          }
+        },
+        "project": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string" },
+            "baseUrl": { "type": "string" }
+          }
+        }
+      }
+    },
+    "createdDate": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the event was created"
+    }
+  },
+  "required": ["eventType", "resource"],
+  "_samples": {
+    "secretScanningAlert": {
+      "eventType": "advancedsecurity.alert.created",
+      "publisherId": "advancedsecurity",
+      "message": {
+        "text": "A secret scanning alert was created in repository my-repo"
+      },
+      "resource": {
+        "id": 42,
+        "alertId": 42,
+        "alertType": "secret",
+        "severity": "high",
+        "state": "active",
+        "secretType": "GitHub Personal Access Token",
+        "location": {
+          "file": "config/settings.yml",
+          "line": 15
+        },
+        "repository": {
+          "name": "my-repo",
+          "project": { "name": "MyProject" }
+        },
+        "link": "https://dev.azure.com/myorg/MyProject/_git/my-repo/alerts/42"
+      }
+    },
+    "codeScanningAlert": {
+      "eventType": "advancedsecurity.alert.created",
+      "publisherId": "advancedsecurity",
+      "message": {
+        "text": "A code scanning alert was created in repository my-repo"
+      },
+      "resource": {
+        "id": 101,
+        "alertId": 101,
+        "alertType": "code",
+        "title": "SQL Injection vulnerability in login handler",
+        "severity": "critical",
+        "state": "active",
+        "rule": {
+          "id": "csharp/sql-injection",
+          "description": "SQL Injection vulnerability"
+        },
+        "location": {
+          "file": "src/Controllers/LoginController.cs",
+          "line": 47,
+          "startLine": 45,
+          "endLine": 50
+        },
+        "repository": {
+          "name": "my-repo",
+          "project": { "name": "MyProject" }
+        },
+        "link": "https://dev.azure.com/myorg/MyProject/_git/my-repo/alerts/101"
+      }
+    },
+    "dependencyAlert": {
+      "eventType": "advancedsecurity.alert.created",
+      "publisherId": "advancedsecurity",
+      "message": {
+        "text": "A dependency alert was created in repository my-repo"
+      },
+      "resource": {
+        "id": 200,
+        "alertId": 200,
+        "alertType": "dependency",
+        "title": "lodash prototype pollution",
+        "advisoryTitle": "Prototype Pollution in lodash",
+        "severity": "medium",
+        "state": "active",
+        "location": {
+          "file": "package-lock.json",
+          "path": "package-lock.json"
+        },
+        "repository": {
+          "name": "my-repo",
+          "project": { "name": "MyProject" }
+        },
+        "link": "https://dev.azure.com/myorg/MyProject/_git/my-repo/alerts/200"
+      }
+    },
+    "stateChangeAlert": {
+      "eventType": "advancedsecurity.alert.statechanged",
+      "publisherId": "advancedsecurity",
+      "message": {
+        "text": "A security alert state was changed in repository my-repo"
+      },
+      "resource": {
+        "id": 42,
+        "alertId": 42,
+        "alertType": "secret",
+        "severity": "high",
+        "state": "fixed",
+        "previousState": "active",
+        "newState": "fixed",
+        "repository": {
+          "name": "my-repo",
+          "project": { "name": "MyProject" }
+        },
+        "link": "https://dev.azure.com/myorg/MyProject/_git/my-repo/alerts/42"
+      }
+    }
+  }
+}
