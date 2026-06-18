@@ -3,6 +3,11 @@
 .env.*
 parameters.local.json
 
+# Generated documents (do not expose in repo)
+*.pdf
+*.html
+*.htm
+
 # OS
 .DS_Store
 Thumbs.db
