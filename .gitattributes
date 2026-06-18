@@ -3,3 +3,9 @@
 .squad/agents/*/history.md merge=union
 .squad/log/** merge=union
 .squad/orchestration-log/** merge=union
+
+# Encrypt all PDF/HTML documents with git-crypt.
+# Without the git-crypt key, these files are stored as unreadable ciphertext.
+*.pdf  filter=git-crypt diff=git-crypt
+*.html filter=git-crypt diff=git-crypt
+*.htm  filter=git-crypt diff=git-crypt

@@ -3,10 +3,9 @@
 .env.*
 parameters.local.json
 
-# Generated documents (do not expose in repo)
-*.pdf
-*.html
-*.htm
+# git-crypt key (NEVER commit the encryption key)
+*.git-crypt-key
+git-crypt-key*
 
 # OS
 .DS_Store
