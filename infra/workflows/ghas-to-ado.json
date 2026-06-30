@@ -2,209 +2,142 @@
   "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "adoOrganization": {
-      "type": "String"
-    },
-    "adoProject": {
-      "type": "String"
-    },
-    "adoPat": {
-      "type": "SecureString"
-    },
-    "githubPat": {
-      "type": "SecureString"
-    },
-    "webhookSecret": {
-      "type": "SecureString"
-    },
-    "workItemType": {
-      "type": "String",
-      "defaultValue": "Issue"
-    }
+    "adoOrganization": { "type": "String" },
+    "adoProject": { "type": "String" },
+    "adoPat": { "type": "SecureString" },
+    "githubPat": { "type": "SecureString", "defaultValue": "" },
+    "webhookSecret": { "type": "SecureString", "defaultValue": "" },
+    "workItemType": { "type": "String", "defaultValue": "Issue" },
+    "closedState": { "type": "String", "defaultValue": "Done" }
   },
   "triggers": {
     "When_a_GHAS_webhook_is_received": {
       "type": "Request",
       "kind": "Http",
-      "inputs": {
-        "schema": {}
-      }
+      "inputs": { "schema": {} }
     }
   },
   "actions": {
     "Compose_EventType": {
       "type": "Compose",
-      "inputs": "@triggerOutputs()?['headers']?['X-GitHub-Event']",
+      "inputs": "@coalesce(triggerOutputs()?['headers']?['X-GitHub-Event'], triggerOutputs()?['headers']?['x-github-event'], 'unknown')",
       "runAfter": {}
     },
     "Compose_Action": {
       "type": "Compose",
-      "inputs": "@triggerBody()?['action']",
+      "inputs": "@toLower(coalesce(triggerBody()?['action'], 'unknown'))",
       "runAfter": {}
     },
     "Compose_AlertNumber": {
       "type": "Compose",
-      "inputs": "@triggerBody()?['alert']?['number']",
+      "inputs": "@coalesce(triggerBody()?['alert']?['number'], 0)",
       "runAfter": {}
     },
     "Compose_RepoFullName": {
       "type": "Compose",
-      "inputs": "@triggerBody()?['repository']?['full_name']",
+      "inputs": "@coalesce(triggerBody()?['repository']?['full_name'], 'unknown-repo')",
       "runAfter": {}
-    },
-    "Compose_GhasTag": {
-      "type": "Compose",
-      "inputs": "@concat('GHAS-', replace(string(outputs('Compose_RepoFullName')), '/', '-'), '-', string(outputs('Compose_AlertNumber')))",
-      "runAfter": {
-        "Compose_AlertNumber": [
-          "Succeeded"
-        ],
-        "Compose_RepoFullName": [
-          "Succeeded"
-        ]
-      }
     },
     "Compose_AlertUrl": {
       "type": "Compose",
       "inputs": "@coalesce(triggerBody()?['alert']?['html_url'], '')",
       "runAfter": {}
     },
+    "Compose_TypeCode": {
+      "type": "Compose",
+      "inputs": "@if(equals(outputs('Compose_EventType'), 'code_scanning_alert'), 'code', if(equals(outputs('Compose_EventType'), 'dependabot_alert'), 'dep', 'secret'))",
+      "runAfter": { "Compose_EventType": ["Succeeded"] }
+    },
+    "Compose_GhasTag": {
+      "type": "Compose",
+      "inputs": "@concat('GHAS-', replace(string(outputs('Compose_RepoFullName')), '/', '-'), '-', outputs('Compose_TypeCode'), '-', string(outputs('Compose_AlertNumber')))",
+      "runAfter": {
+        "Compose_TypeCode": ["Succeeded"],
+        "Compose_AlertNumber": ["Succeeded"],
+        "Compose_RepoFullName": ["Succeeded"]
+      }
+    },
     "Compose_Title": {
       "type": "Compose",
       "inputs": "@if(equals(outputs('Compose_EventType'), 'code_scanning_alert'), concat('[GHAS-CodeScan] ', coalesce(triggerBody()?['alert']?['rule']?['description'], 'Code scanning alert')), if(equals(outputs('Compose_EventType'), 'dependabot_alert'), concat('[GHAS-Dependabot] ', coalesce(triggerBody()?['alert']?['security_advisory']?['summary'], 'Dependabot alert')), concat('[GHAS-Secret] ', coalesce(triggerBody()?['alert']?['secret_type_display_name'], 'Secret scanning alert'))))",
-      "runAfter": {
-        "Compose_EventType": [
-          "Succeeded"
-        ]
-      }
+      "runAfter": { "Compose_EventType": ["Succeeded"] }
     },
     "Compose_Severity": {
       "type": "Compose",
       "inputs": "@toLower(if(equals(outputs('Compose_EventType'), 'code_scanning_alert'), coalesce(triggerBody()?['alert']?['rule']?['security_severity_level'], 'medium'), if(equals(outputs('Compose_EventType'), 'dependabot_alert'), coalesce(triggerBody()?['alert']?['security_vulnerability']?['severity'], 'medium'), 'critical')))",
-      "runAfter": {
-        "Compose_EventType": [
-          "Succeeded"
-        ]
-      }
+      "runAfter": { "Compose_EventType": ["Succeeded"] }
     },
     "Compose_FilePath": {
       "type": "Compose",
       "inputs": "@if(equals(outputs('Compose_EventType'), 'code_scanning_alert'), coalesce(triggerBody()?['alert']?['most_recent_instance']?['location']?['path'], 'N/A'), if(equals(outputs('Compose_EventType'), 'dependabot_alert'), coalesce(triggerBody()?['alert']?['dependency']?['manifest_path'], 'N/A'), 'N/A'))",
-      "runAfter": {
-        "Compose_EventType": [
-          "Succeeded"
-        ]
-      }
+      "runAfter": { "Compose_EventType": ["Succeeded"] }
     },
     "Compose_LineNumber": {
       "type": "Compose",
       "inputs": "@if(equals(outputs('Compose_EventType'), 'code_scanning_alert'), string(coalesce(triggerBody()?['alert']?['most_recent_instance']?['location']?['start_line'], 'N/A')), 'N/A')",
-      "runAfter": {
-        "Compose_EventType": [
-          "Succeeded"
-        ]
-      }
+      "runAfter": { "Compose_EventType": ["Succeeded"] }
     },
     "Compose_Branch": {
       "type": "Compose",
       "inputs": "@if(equals(outputs('Compose_EventType'), 'code_scanning_alert'), coalesce(triggerBody()?['alert']?['most_recent_instance']?['ref'], 'N/A'), 'N/A')",
-      "runAfter": {
-        "Compose_EventType": [
-          "Succeeded"
-        ]
-      }
+      "runAfter": { "Compose_EventType": ["Succeeded"] }
     },
     "Compose_DetailText": {
       "type": "Compose",
       "inputs": "@if(equals(outputs('Compose_EventType'), 'code_scanning_alert'), coalesce(triggerBody()?['alert']?['most_recent_instance']?['message']?['text'], triggerBody()?['alert']?['rule']?['description'], 'No additional details.'), if(equals(outputs('Compose_EventType'), 'dependabot_alert'), coalesce(triggerBody()?['alert']?['security_advisory']?['description'], 'No additional details.'), concat('Secret type: ', coalesce(triggerBody()?['alert']?['secret_type'], 'unknown'), '. This secret may have been exposed and should be rotated immediately.')))",
-      "runAfter": {
-        "Compose_EventType": [
-          "Succeeded"
-        ]
-      }
+      "runAfter": { "Compose_EventType": ["Succeeded"] }
     },
     "Compose_Tags": {
       "type": "Compose",
       "inputs": "@concat('GHAS; ', if(equals(outputs('Compose_EventType'), 'code_scanning_alert'), 'CodeScanning', if(equals(outputs('Compose_EventType'), 'dependabot_alert'), 'Dependabot', 'SecretScanning')), '; ', outputs('Compose_Severity'), '; ', outputs('Compose_GhasTag'))",
       "runAfter": {
-        "Compose_EventType": [
-          "Succeeded"
-        ],
-        "Compose_Severity": [
-          "Succeeded"
-        ],
-        "Compose_GhasTag": [
-          "Succeeded"
-        ]
+        "Compose_EventType": ["Succeeded"],
+        "Compose_Severity": ["Succeeded"],
+        "Compose_GhasTag": ["Succeeded"]
       }
     },
     "Compose_Description": {
       "type": "Compose",
       "inputs": "@concat('<h3>GitHub Advanced Security Alert</h3><table border=\"1\" cellpadding=\"8\" cellspacing=\"0\" style=\"border-collapse:collapse;\"><tr><td><b>Alert Type</b></td><td>', if(equals(outputs('Compose_EventType'), 'code_scanning_alert'), 'Code Scanning', if(equals(outputs('Compose_EventType'), 'dependabot_alert'), 'Dependabot', 'Secret Scanning')), '</td></tr><tr><td><b>Severity</b></td><td>', toUpper(outputs('Compose_Severity')), '</td></tr><tr><td><b>Repository</b></td><td>', string(outputs('Compose_RepoFullName')), '</td></tr><tr><td><b>Alert #</b></td><td>', string(outputs('Compose_AlertNumber')), '</td></tr><tr><td><b>File</b></td><td>', string(outputs('Compose_FilePath')), '</td></tr><tr><td><b>Line</b></td><td>', string(outputs('Compose_LineNumber')), '</td></tr><tr><td><b>Branch</b></td><td>', string(outputs('Compose_Branch')), '</td></tr></table><h4>Details</h4><p>', string(outputs('Compose_DetailText')), '</p><p><a href=\"', string(outputs('Compose_AlertUrl')), '\">View in GitHub Advanced Security</a></p><hr><p><i>Auto-created by GHAS-ADO Sync | Tag: ', outputs('Compose_GhasTag'), '</i></p>')",
       "runAfter": {
-        "Compose_EventType": [
-          "Succeeded"
-        ],
-        "Compose_AlertUrl": [
-          "Succeeded"
-        ],
-        "Compose_GhasTag": [
-          "Succeeded"
-        ],
-        "Compose_Severity": [
-          "Succeeded"
-        ],
-        "Compose_AlertNumber": [
-          "Succeeded"
-        ],
-        "Compose_RepoFullName": [
-          "Succeeded"
-        ],
-        "Compose_FilePath": [
-          "Succeeded"
-        ],
-        "Compose_LineNumber": [
-          "Succeeded"
-        ],
-        "Compose_Branch": [
-          "Succeeded"
-        ],
-        "Compose_DetailText": [
-          "Succeeded"
-        ]
+        "Compose_EventType": ["Succeeded"],
+        "Compose_AlertUrl": ["Succeeded"],
+        "Compose_GhasTag": ["Succeeded"],
+        "Compose_Severity": ["Succeeded"],
+        "Compose_AlertNumber": ["Succeeded"],
+        "Compose_RepoFullName": ["Succeeded"],
+        "Compose_FilePath": ["Succeeded"],
+        "Compose_LineNumber": ["Succeeded"],
+        "Compose_Branch": ["Succeeded"],
+        "Compose_DetailText": ["Succeeded"]
       }
+    },
+    "Compose_IsCreateAction": {
+      "type": "Compose",
+      "inputs": "@or(equals(outputs('Compose_Action'), 'created'), equals(outputs('Compose_Action'), 'reopened'), equals(outputs('Compose_Action'), 'reopened_by_user'), equals(outputs('Compose_Action'), 'reintroduced'), equals(outputs('Compose_Action'), 'appeared_in_branch'))",
+      "runAfter": { "Compose_Action": ["Succeeded"] }
+    },
+    "Compose_IsCloseAction": {
+      "type": "Compose",
+      "inputs": "@or(equals(outputs('Compose_Action'), 'resolved'), equals(outputs('Compose_Action'), 'fixed'), equals(outputs('Compose_Action'), 'closed_by_user'), equals(outputs('Compose_Action'), 'dismissed'), equals(outputs('Compose_Action'), 'auto_dismissed'), equals(outputs('Compose_Action'), 'auto_resolved'))",
+      "runAfter": { "Compose_Action": ["Succeeded"] }
     },
     "Condition_IsCreateAction": {
       "type": "If",
       "expression": {
         "and": [
-          {
-            "equals": [
-              "@outputs('Compose_Action')",
-              "created"
-            ]
-          }
+          { "equals": ["@outputs('Compose_IsCreateAction')", true] }
         ]
       },
       "runAfter": {
-        "Compose_Action": [
-          "Succeeded"
-        ],
-        "Compose_Title": [
-          "Succeeded"
-        ],
-        "Compose_Description": [
-          "Succeeded"
-        ],
-        "Compose_Tags": [
-          "Succeeded"
-        ],
-        "Compose_GhasTag": [
-          "Succeeded"
-        ],
-        "Compose_AlertUrl": [
-          "Succeeded"
-        ]
+        "Compose_IsCreateAction": ["Succeeded"],
+        "Compose_IsCloseAction": ["Succeeded"],
+        "Compose_Title": ["Succeeded"],
+        "Compose_Description": ["Succeeded"],
+        "Compose_Tags": ["Succeeded"],
+        "Compose_GhasTag": ["Succeeded"],
+        "Compose_AlertUrl": ["Succeeded"],
+        "Compose_Severity": ["Succeeded"]
       },
       "actions": {
         "HTTP_QueryExistingWorkItem": {
@@ -214,11 +147,12 @@
             "uri": "https://dev.azure.com/@{parameters('adoOrganization')}/@{encodeURIComponent(parameters('adoProject'))}/_apis/wit/wiql?api-version=7.1",
             "headers": {
               "Content-Type": "application/json",
-              "Authorization": "@{concat('Basic ', base64(concat(':', parameters('adoPat'))))}"
+              "Authorization": "Basic @{base64(concat(':', parameters('adoPat')))}"
             },
             "body": {
-              "query": "SELECT [System.Id] FROM WorkItems WHERE [System.Tags] CONTAINS '@{outputs('Compose_GhasTag')}' AND [System.TeamProject] = '@{parameters('adoProject')}'"
-            }
+              "query": "SELECT [System.Id] FROM WorkItems WHERE [System.Tags] CONTAINS '@{outputs('Compose_GhasTag')}' AND [System.TeamProject] = '@{parameters('adoProject')}' AND [System.State] <> '@{parameters('closedState')}' AND [System.State] <> 'Removed'"
+            },
+            "retryPolicy": { "type": "exponential", "count": 3, "interval": "PT10S" }
           },
           "runAfter": {}
         },
@@ -226,18 +160,11 @@
           "type": "If",
           "expression": {
             "and": [
-              {
-                "equals": [
-                  "@length(body('HTTP_QueryExistingWorkItem')?['workItems'])",
-                  0
-                ]
-              }
+              { "equals": ["@length(coalesce(body('HTTP_QueryExistingWorkItem')?['workItems'], json('[]')))", 0] }
             ]
           },
           "runAfter": {
-            "HTTP_QueryExistingWorkItem": [
-              "Succeeded"
-            ]
+            "HTTP_QueryExistingWorkItem": ["Succeeded"]
           },
           "actions": {
             "HTTP_CreateWorkItem": {
@@ -247,43 +174,29 @@
                 "uri": "https://dev.azure.com/@{parameters('adoOrganization')}/@{encodeURIComponent(parameters('adoProject'))}/_apis/wit/workitems/$@{parameters('workItemType')}?api-version=7.1",
                 "headers": {
                   "Content-Type": "application/json-patch+json",
-                  "Authorization": "@{concat('Basic ', base64(concat(':', parameters('adoPat'))))}"
+                  "Authorization": "Basic @{base64(concat(':', parameters('adoPat')))}"
                 },
                 "body": [
-                  {
-                    "op": "add",
-                    "path": "/fields/System.Title",
-                    "value": "@{outputs('Compose_Title')}"
-                  },
-                  {
-                    "op": "add",
-                    "path": "/fields/System.Description",
-                    "value": "@{outputs('Compose_Description')}"
-                  },
-                  {
-                    "op": "add",
-                    "path": "/fields/System.Tags",
-                    "value": "@{outputs('Compose_Tags')}"
-                  },
+                  { "op": "add", "path": "/fields/System.Title", "value": "@{outputs('Compose_Title')}" },
+                  { "op": "add", "path": "/fields/System.Description", "value": "@{outputs('Compose_Description')}" },
+                  { "op": "add", "path": "/fields/System.Tags", "value": "@{outputs('Compose_Tags')}" },
+                  { "op": "add", "path": "/fields/Microsoft.VSTS.Common.Priority", "value": "@if(or(equals(outputs('Compose_Severity'),'critical'),equals(outputs('Compose_Severity'),'high')), 1, if(equals(outputs('Compose_Severity'),'medium'), 2, 3))" },
                   {
                     "op": "add",
                     "path": "/relations/-",
                     "value": {
                       "rel": "Hyperlink",
                       "url": "@{outputs('Compose_AlertUrl')}",
-                      "attributes": {
-                        "comment": "GitHub Advanced Security Alert"
-                      }
+                      "attributes": { "comment": "GitHub Advanced Security Alert" }
                     }
                   }
-                ]
+                ],
+                "retryPolicy": { "type": "exponential", "count": 3, "interval": "PT10S" }
               },
               "runAfter": {}
             }
           },
-          "else": {
-            "actions": {}
-          }
+          "else": { "actions": {} }
         }
       },
       "else": {
@@ -291,19 +204,8 @@
           "Condition_IsCloseAction": {
             "type": "If",
             "expression": {
-              "or": [
-                {
-                  "equals": [
-                    "@outputs('Compose_Action')",
-                    "fixed"
-                  ]
-                },
-                {
-                  "equals": [
-                    "@outputs('Compose_Action')",
-                    "resolved"
-                  ]
-                }
+              "and": [
+                { "equals": ["@outputs('Compose_IsCloseAction')", true] }
               ]
             },
             "runAfter": {},
@@ -315,11 +217,12 @@
                   "uri": "https://dev.azure.com/@{parameters('adoOrganization')}/@{encodeURIComponent(parameters('adoProject'))}/_apis/wit/wiql?api-version=7.1",
                   "headers": {
                     "Content-Type": "application/json",
-                    "Authorization": "@{concat('Basic ', base64(concat(':', parameters('adoPat'))))}"
+                    "Authorization": "Basic @{base64(concat(':', parameters('adoPat')))}"
                   },
                   "body": {
-                    "query": "SELECT [System.Id], [System.State] FROM WorkItems WHERE [System.Tags] CONTAINS '@{outputs('Compose_GhasTag')}' AND [System.TeamProject] = '@{parameters('adoProject')}' AND [System.State] <> 'Closed' AND [System.State] <> 'Done' AND [System.State] <> 'Removed'"
-                  }
+                    "query": "SELECT [System.Id] FROM WorkItems WHERE [System.Tags] CONTAINS '@{outputs('Compose_GhasTag')}' AND [System.TeamProject] = '@{parameters('adoProject')}' AND [System.State] <> '@{parameters('closedState')}' AND [System.State] <> 'Removed'"
+                  },
+                  "retryPolicy": { "type": "exponential", "count": 3, "interval": "PT10S" }
                 },
                 "runAfter": {}
               },
@@ -327,18 +230,11 @@
                 "type": "If",
                 "expression": {
                   "and": [
-                    {
-                      "greater": [
-                        "@length(body('HTTP_FindWorkItemToClose')?['workItems'])",
-                        0
-                      ]
-                    }
+                    { "greater": ["@length(coalesce(body('HTTP_FindWorkItemToClose')?['workItems'], json('[]')))", 0] }
                   ]
                 },
                 "runAfter": {
-                  "HTTP_FindWorkItemToClose": [
-                    "Succeeded"
-                  ]
+                  "HTTP_FindWorkItemToClose": ["Succeeded"]
                 },
                 "actions": {
                   "HTTP_CloseWorkItem": {
@@ -348,35 +244,25 @@
                       "uri": "https://dev.azure.com/@{parameters('adoOrganization')}/@{encodeURIComponent(parameters('adoProject'))}/_apis/wit/workitems/@{body('HTTP_FindWorkItemToClose')?['workItems'][0]?['id']}?api-version=7.1",
                       "headers": {
                         "Content-Type": "application/json-patch+json",
-                        "Authorization": "@{concat('Basic ', base64(concat(':', parameters('adoPat'))))}"
+                        "Authorization": "Basic @{base64(concat(':', parameters('adoPat')))}"
                       },
                       "body": [
-                        {
-                          "op": "add",
-                          "path": "/fields/System.State",
-                          "value": "Done"
-                        },
-                        {
-                          "op": "add",
-                          "path": "/fields/System.History",
-                          "value": "Auto-closed by GHAS-ADO Sync: Vulnerability marked as @{outputs('Compose_Action')} in GitHub Advanced Security. View alert: @{outputs('Compose_AlertUrl')}"
-                        }
-                      ]
+                        { "op": "add", "path": "/fields/System.State", "value": "@{parameters('closedState')}" },
+                        { "op": "add", "path": "/fields/System.History", "value": "Auto-closed by GHAS-ADO Sync: alert marked '@{outputs('Compose_Action')}' in GitHub Advanced Security. View alert: @{outputs('Compose_AlertUrl')}" }
+                      ],
+                      "retryPolicy": { "type": "exponential", "count": 3, "interval": "PT10S" }
                     },
                     "runAfter": {}
                   }
                 },
-                "else": {
-                  "actions": {}
-                }
+                "else": { "actions": {} }
               }
             },
-            "else": {
-              "actions": {}
-            }
+            "else": { "actions": {} }
           }
         }
       }
     }
-  }
+  },
+  "outputs": {}
 }
