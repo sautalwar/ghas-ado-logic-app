@@ -4,7 +4,19 @@ Automatically create and close Azure DevOps work items when GHAzDO security aler
 
 ## Deploy to Azure
 
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsautalwar%2Fghas-ado-logic-app%2Fmain%2Finfra%2Fdeploy-full-automation.bicep)
+**Alerts from Azure DevOps (GHAzDO):**
+
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsautalwar%2Fghas-ado-logic-app%2Fmaster%2Finfra%2Fazuredeploy.json)
+
+**Alerts from GitHub (GHAS) → Azure Boards:**
+
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsautalwar%2Fghas-ado-logic-app%2Fmaster%2Finfra%2Fazuredeploy-ghas.json)
+
+> The portal "Deploy to Azure" button requires an ARM **JSON** template. The buttons point at
+> `infra/azuredeploy.json` / `infra/azuredeploy-ghas.json`, which are compiled from the matching
+> `.bicep` files. After changing a `.bicep`, recompile with
+> `az bicep build --file infra/<name>.bicep --outfile infra/<name-output>.json`.
+> For the GitHub (GHAS) flow, see [docs/github-webhook-setup.md](docs/github-webhook-setup.md).
 
 ## How It Works
 
