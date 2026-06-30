@@ -14,14 +14,11 @@
     "adoPat": {
       "value": ""
     },
-    "githubPat": {
-      "value": ""
-    },
-    "webhookSecret": {
-      "value": ""
-    },
     "workItemType": {
       "value": "Issue"
+    },
+    "closedState": {
+      "value": "Closed"
     }
   }
 }
