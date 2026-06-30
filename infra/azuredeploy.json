@@ -1,0 +1,537 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.42.1.51946",
+      "templateHash": "1976363385189436344"
+    }
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Azure region for all resources"
+      }
+    },
+    "adoOrganization": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure DevOps organization name (e.g. \"myorg\" from https://dev.azure.com/myorg)"
+      }
+    },
+    "adoProject": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure DevOps project name"
+      }
+    },
+    "adoPat": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Azure DevOps PAT with \"Work Items: Read & Write\" scope"
+      }
+    },
+    "workItemType": {
+      "type": "string",
+      "defaultValue": "Issue",
+      "metadata": {
+        "description": "ADO work item type to create (e.g. Issue, Bug, Task)"
+      }
+    },
+    "closedState": {
+      "type": "string",
+      "defaultValue": "Done",
+      "metadata": {
+        "description": "State to set when closing work items. Agile=\"Closed\", Scrum=\"Done\", Basic=\"Done\", CMMI=\"Closed\""
+      }
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "ghazdo-full-automation-logic-app",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "adoOrganization": {
+            "value": "[parameters('adoOrganization')]"
+          },
+          "adoProject": {
+            "value": "[parameters('adoProject')]"
+          },
+          "adoPat": {
+            "value": "[parameters('adoPat')]"
+          },
+          "workItemType": {
+            "value": "[parameters('workItemType')]"
+          },
+          "closedState": {
+            "value": "[parameters('closedState')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.42.1.51946",
+              "templateHash": "13028350538874625952"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "Azure region"
+              }
+            },
+            "adoOrganization": {
+              "type": "string",
+              "metadata": {
+                "description": "Azure DevOps organization name"
+              }
+            },
+            "adoProject": {
+              "type": "string",
+              "metadata": {
+                "description": "Azure DevOps project name"
+              }
+            },
+            "adoPat": {
+              "type": "securestring",
+              "metadata": {
+                "description": "Azure DevOps PAT with \"Work Items: Read & Write\" scope"
+              }
+            },
+            "workItemType": {
+              "type": "string",
+              "defaultValue": "Issue",
+              "metadata": {
+                "description": "ADO work item type to create (e.g. Issue, Bug, Task)"
+              }
+            },
+            "closedState": {
+              "type": "string",
+              "defaultValue": "Done",
+              "metadata": {
+                "description": "State to set when closing work items. Agile/CMMI=\"Closed\", Scrum/Basic=\"Done\""
+              }
+            }
+          },
+          "variables": {
+            "$fxv#0": {
+              "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+              "contentVersion": "1.0.0.0",
+              "parameters": {
+                "adoOrganization": {
+                  "type": "String"
+                },
+                "adoProject": {
+                  "type": "String"
+                },
+                "adoPat": {
+                  "type": "SecureString"
+                },
+                "workItemType": {
+                  "type": "String",
+                  "defaultValue": "Issue"
+                },
+                "closedState": {
+                  "type": "String",
+                  "defaultValue": "Done"
+                }
+              },
+              "triggers": {
+                "When_a_GHAzDO_alert_is_received": {
+                  "type": "Request",
+                  "kind": "Http",
+                  "inputs": {
+                    "schema": {}
+                  }
+                }
+              },
+              "actions": {
+                "Compose_EventType": {
+                  "type": "Compose",
+                  "inputs": "@triggerBody()?['eventType']",
+                  "runAfter": {}
+                },
+                "Compose_AlertType": {
+                  "type": "Compose",
+                  "inputs": "@coalesce(triggerBody()?['resource']?['alertType'], 'unknown')",
+                  "runAfter": {}
+                },
+                "Compose_AlertId": {
+                  "type": "Compose",
+                  "inputs": "@coalesce(triggerBody()?['resource']?['alertId'], triggerBody()?['resource']?['id'], 0)",
+                  "runAfter": {}
+                },
+                "Compose_RepoName": {
+                  "type": "Compose",
+                  "inputs": "@coalesce(triggerBody()?['resource']?['repository']?['name'], 'unknown-repo')",
+                  "runAfter": {}
+                },
+                "Compose_AlertUrl": {
+                  "type": "Compose",
+                  "inputs": "@coalesce(triggerBody()?['resource']?['link'], triggerBody()?['resource']?['url'], '')",
+                  "runAfter": {}
+                },
+                "Compose_Severity": {
+                  "type": "Compose",
+                  "inputs": "@toLower(coalesce(triggerBody()?['resource']?['severity'], 'medium'))",
+                  "runAfter": {}
+                },
+                "Compose_FilePath": {
+                  "type": "Compose",
+                  "inputs": "@coalesce(triggerBody()?['resource']?['location']?['file'], triggerBody()?['resource']?['location']?['path'], 'N/A')",
+                  "runAfter": {}
+                },
+                "Compose_LineNumber": {
+                  "type": "Compose",
+                  "inputs": "@coalesce(triggerBody()?['resource']?['location']?['line'], 'N/A')",
+                  "runAfter": {}
+                },
+                "Compose_GhasTag": {
+                  "type": "Compose",
+                  "inputs": "@concat('GHAzDO-', outputs('Compose_RepoName'), '-', string(outputs('Compose_AlertId')))",
+                  "runAfter": {
+                    "Compose_AlertId": [
+                      "Succeeded"
+                    ],
+                    "Compose_RepoName": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Compose_Title": {
+                  "type": "Compose",
+                  "inputs": "@if(equals(outputs('Compose_AlertType'), 'secret'), concat('[GHAzDO-Secret] ', coalesce(triggerBody()?['resource']?['secretType'], 'Secret detected')), if(equals(outputs('Compose_AlertType'), 'code'), concat('[GHAzDO-CodeScan] ', coalesce(triggerBody()?['resource']?['title'], triggerBody()?['resource']?['rule']?['description'], 'Code scanning alert')), if(equals(outputs('Compose_AlertType'), 'dependency'), concat('[GHAzDO-Dependency] ', coalesce(triggerBody()?['resource']?['title'], triggerBody()?['resource']?['advisoryTitle'], 'Dependency alert')), concat('[GHAzDO-Alert] ', coalesce(triggerBody()?['resource']?['title'], triggerBody()?['message']?['text'], 'Security alert')))))",
+                  "runAfter": {
+                    "Compose_AlertType": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Compose_Tags": {
+                  "type": "Compose",
+                  "inputs": "@concat('GHAzDO;', outputs('Compose_AlertType'), ';', outputs('Compose_Severity'), ';', outputs('Compose_GhasTag'))",
+                  "runAfter": {
+                    "Compose_Severity": [
+                      "Succeeded"
+                    ],
+                    "Compose_AlertType": [
+                      "Succeeded"
+                    ],
+                    "Compose_GhasTag": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Compose_Description": {
+                  "type": "Compose",
+                  "inputs": "@concat('<h3>GHAzDO Security Alert</h3>', '<table border=\"1\" cellpadding=\"5\">', '<tr><td><b>Alert Type</b></td><td>', outputs('Compose_AlertType'), '</td></tr>', '<tr><td><b>Severity</b></td><td>', outputs('Compose_Severity'), '</td></tr>', '<tr><td><b>Repository</b></td><td>', outputs('Compose_RepoName'), '</td></tr>', '<tr><td><b>File</b></td><td>', outputs('Compose_FilePath'), '</td></tr>', '<tr><td><b>Line</b></td><td>', string(outputs('Compose_LineNumber')), '</td></tr>', '<tr><td><b>Alert ID</b></td><td>', string(outputs('Compose_AlertId')), '</td></tr>', '<tr><td><b>Tag</b></td><td>', outputs('Compose_GhasTag'), '</td></tr>', '</table>', '<p><a href=\"', outputs('Compose_AlertUrl'), '\">View Alert in Azure DevOps</a></p>', '<hr/><p><i>Auto-created by GHAzDO Logic App Integration</i></p>')",
+                  "runAfter": {
+                    "Compose_AlertType": [
+                      "Succeeded"
+                    ],
+                    "Compose_Severity": [
+                      "Succeeded"
+                    ],
+                    "Compose_RepoName": [
+                      "Succeeded"
+                    ],
+                    "Compose_FilePath": [
+                      "Succeeded"
+                    ],
+                    "Compose_LineNumber": [
+                      "Succeeded"
+                    ],
+                    "Compose_AlertId": [
+                      "Succeeded"
+                    ],
+                    "Compose_GhasTag": [
+                      "Succeeded"
+                    ],
+                    "Compose_AlertUrl": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Compose_IsCreateEvent": {
+                  "type": "Compose",
+                  "inputs": "@or(equals(outputs('Compose_EventType'), 'advancedsecurity.alert.created'), contains(string(outputs('Compose_EventType')), 'created'))",
+                  "runAfter": {
+                    "Compose_EventType": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Condition_IsCreateAction": {
+                  "type": "If",
+                  "expression": {
+                    "and": [
+                      {
+                        "equals": [
+                          "@outputs('Compose_IsCreateEvent')",
+                          true
+                        ]
+                      }
+                    ]
+                  },
+                  "runAfter": {
+                    "Compose_IsCreateEvent": [
+                      "Succeeded"
+                    ],
+                    "Compose_Title": [
+                      "Succeeded"
+                    ],
+                    "Compose_Tags": [
+                      "Succeeded"
+                    ],
+                    "Compose_Description": [
+                      "Succeeded"
+                    ],
+                    "Compose_AlertUrl": [
+                      "Succeeded"
+                    ]
+                  },
+                  "actions": {
+                    "HTTP_QueryExistingWorkItem": {
+                      "type": "Http",
+                      "inputs": {
+                        "uri": "https://dev.azure.com/@{parameters('adoOrganization')}/@{encodeURIComponent(parameters('adoProject'))}/_apis/wit/wiql?api-version=7.1",
+                        "method": "POST",
+                        "headers": {
+                          "Content-Type": "application/json",
+                          "Authorization": "Basic @{base64(concat(':', parameters('adoPat')))}"
+                        },
+                        "body": {
+                          "query": "SELECT [System.Id] FROM WorkItems WHERE [System.Tags] CONTAINS '@{outputs('Compose_GhasTag')}' AND [System.State] <> 'Removed'"
+                        },
+                        "retryPolicy": {
+                          "type": "exponential",
+                          "count": 3,
+                          "interval": "PT10S"
+                        }
+                      },
+                      "runAfter": {}
+                    },
+                    "Condition_NoExistingWorkItem": {
+                      "type": "If",
+                      "expression": {
+                        "and": [
+                          {
+                            "equals": [
+                              "@length(body('HTTP_QueryExistingWorkItem')?['workItems'])",
+                              0
+                            ]
+                          }
+                        ]
+                      },
+                      "runAfter": {
+                        "HTTP_QueryExistingWorkItem": [
+                          "Succeeded"
+                        ]
+                      },
+                      "actions": {
+                        "HTTP_CreateWorkItem": {
+                          "type": "Http",
+                          "inputs": {
+                            "uri": "https://dev.azure.com/@{parameters('adoOrganization')}/@{encodeURIComponent(parameters('adoProject'))}/_apis/wit/workitems/$@{parameters('workItemType')}?api-version=7.1",
+                            "method": "PATCH",
+                            "headers": {
+                              "Content-Type": "application/json-patch+json",
+                              "Authorization": "Basic @{base64(concat(':', parameters('adoPat')))}"
+                            },
+                            "body": [
+                              {
+                                "op": "add",
+                                "path": "/fields/System.Title",
+                                "value": "@{outputs('Compose_Title')}"
+                              },
+                              {
+                                "op": "add",
+                                "path": "/fields/System.Description",
+                                "value": "@{outputs('Compose_Description')}"
+                              },
+                              {
+                                "op": "add",
+                                "path": "/fields/System.Tags",
+                                "value": "@{outputs('Compose_Tags')}"
+                              },
+                              {
+                                "op": "add",
+                                "path": "/fields/Microsoft.VSTS.Common.Priority",
+                                "value": "@if(or(equals(outputs('Compose_Severity'),'critical'),equals(outputs('Compose_Severity'),'high')), 1, if(equals(outputs('Compose_Severity'),'medium'), 2, 3))"
+                              }
+                            ],
+                            "retryPolicy": {
+                              "type": "exponential",
+                              "count": 3,
+                              "interval": "PT10S"
+                            }
+                          },
+                          "runAfter": {}
+                        }
+                      },
+                      "else": {
+                        "actions": {}
+                      }
+                    }
+                  },
+                  "else": {
+                    "actions": {
+                      "HTTP_FindWorkItemToClose": {
+                        "type": "Http",
+                        "inputs": {
+                          "uri": "https://dev.azure.com/@{parameters('adoOrganization')}/@{encodeURIComponent(parameters('adoProject'))}/_apis/wit/wiql?api-version=7.1",
+                          "method": "POST",
+                          "headers": {
+                            "Content-Type": "application/json",
+                            "Authorization": "Basic @{base64(concat(':', parameters('adoPat')))}"
+                          },
+                          "body": {
+                            "query": "SELECT [System.Id] FROM WorkItems WHERE [System.Tags] CONTAINS '@{outputs('Compose_GhasTag')}' AND [System.State] <> '@{parameters('closedState')}' AND [System.State] <> 'Removed'"
+                          },
+                          "retryPolicy": {
+                            "type": "exponential",
+                            "count": 3,
+                            "interval": "PT10S"
+                          }
+                        },
+                        "runAfter": {}
+                      },
+                      "Condition_FoundWorkItemToClose": {
+                        "type": "If",
+                        "expression": {
+                          "and": [
+                            {
+                              "greater": [
+                                "@length(body('HTTP_FindWorkItemToClose')?['workItems'])",
+                                0
+                              ]
+                            }
+                          ]
+                        },
+                        "runAfter": {
+                          "HTTP_FindWorkItemToClose": [
+                            "Succeeded"
+                          ]
+                        },
+                        "actions": {
+                          "HTTP_CloseWorkItem": {
+                            "type": "Http",
+                            "inputs": {
+                              "uri": "https://dev.azure.com/@{parameters('adoOrganization')}/@{encodeURIComponent(parameters('adoProject'))}/_apis/wit/workitems/@{body('HTTP_FindWorkItemToClose')?['workItems'][0]?['id']}?api-version=7.1",
+                              "method": "PATCH",
+                              "headers": {
+                                "Content-Type": "application/json-patch+json",
+                                "Authorization": "Basic @{base64(concat(':', parameters('adoPat')))}"
+                              },
+                              "body": [
+                                {
+                                  "op": "add",
+                                  "path": "/fields/System.State",
+                                  "value": "@{parameters('closedState')}"
+                                },
+                                {
+                                  "op": "add",
+                                  "path": "/fields/System.History",
+                                  "value": "Auto-closed: GHAzDO alert resolved/fixed."
+                                }
+                              ],
+                              "retryPolicy": {
+                                "type": "exponential",
+                                "count": 3,
+                                "interval": "PT10S"
+                              }
+                            },
+                            "runAfter": {}
+                          }
+                        },
+                        "else": {
+                          "actions": {}
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "outputs": {}
+            },
+            "logicAppName": "[format('ghazdo-full-sync-{0}', uniqueString(resourceGroup().id))]",
+            "workflowDefinition": "[variables('$fxv#0')]"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Logic/workflows",
+              "apiVersion": "2019-05-01",
+              "name": "[variables('logicAppName')]",
+              "location": "[parameters('location')]",
+              "tags": {
+                "purpose": "GHAzDO-Full-Automation",
+                "managedBy": "Bicep"
+              },
+              "properties": {
+                "state": "Enabled",
+                "definition": "[variables('workflowDefinition')]",
+                "parameters": {
+                  "adoOrganization": {
+                    "value": "[parameters('adoOrganization')]"
+                  },
+                  "adoProject": {
+                    "value": "[parameters('adoProject')]"
+                  },
+                  "adoPat": {
+                    "value": "[parameters('adoPat')]"
+                  },
+                  "workItemType": {
+                    "value": "[parameters('workItemType')]"
+                  },
+                  "closedState": {
+                    "value": "[parameters('closedState')]"
+                  }
+                }
+              }
+            }
+          ],
+          "outputs": {
+            "triggerUrl": {
+              "type": "string",
+              "value": "[listCallbackUrl(format('{0}/triggers/When_a_GHAzDO_alert_is_received', resourceId('Microsoft.Logic/workflows', variables('logicAppName'))), '2019-05-01').value]"
+            },
+            "logicAppName": {
+              "type": "string",
+              "value": "[variables('logicAppName')]"
+            },
+            "logicAppResourceId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Logic/workflows', variables('logicAppName'))]"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "triggerUrl": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'ghazdo-full-automation-logic-app'), '2025-04-01').outputs.triggerUrl.value]"
+    },
+    "logicAppName": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'ghazdo-full-automation-logic-app'), '2025-04-01').outputs.logicAppName.value]"
+    }
+  }
+}

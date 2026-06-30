@@ -12,15 +12,18 @@ param adoProject string
 param adoPat string
 
 @secure()
-@description('GitHub PAT')
-param githubPat string
+@description('GitHub PAT (optional; not required for the webhook-driven secrets-only flow)')
+param githubPat string = ''
 
 @secure()
-@description('Webhook secret for HMAC validation')
-param webhookSecret string
+@description('Webhook secret shared with the GitHub webhook (optional)')
+param webhookSecret string = ''
 
 @description('ADO work item type')
 param workItemType string = 'Issue'
+
+@description('State to set when closing work items. Agile="Closed", Scrum="Done", Basic="Done", CMMI="Closed"')
+param closedState string = 'Done'
 
 var logicAppName = 'ghas-ado-sync-${uniqueString(resourceGroup().id)}'
 var workflowDefinition = loadJsonContent('../workflows/ghas-to-ado.json')
@@ -53,6 +56,9 @@ resource logicApp 'Microsoft.Logic/workflows@2019-05-01' = {
       }
       workItemType: {
         value: workItemType
+      }
+      closedState: {
+        value: closedState
       }
     }
   }
