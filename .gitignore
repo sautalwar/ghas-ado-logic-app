@@ -25,3 +25,5 @@ Thumbs.db
 # Local-only conversation logs (never merge to GitHub)
 session_conversation_log.html
 session_log.md
+
+GHAS_to_Boards_Implementation_Email.html
